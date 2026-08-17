@@ -1,0 +1,277 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// MySQL schema for the enterprise database.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum EducationLevel {
+  LICENCE
+  MASTER
+}
+
+enum InternshipType {
+  ACADEMIC
+  PROFESSIONAL
+}
+
+enum InternshipStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  ON_HOLD
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  REMOVED
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Char(36)
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  users User[]
+
+  @@map("roles")
+}
+
+model Department {
+  id          String   @id @default(uuid()) @db.Char(36)
+  name        String   @unique @db.VarChar(150)
+  code        String   @unique @db.VarChar(20)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  createdById String? @map("created_by_id") @db.Char(36)
+  updatedById String? @map("updated_by_id") @db.Char(36)
+
+  employees   Employee[]
+  authorities Authority[]
+  internships Internship[]
+  projects    Project[]
+
+  createdBy User? @relation("DepartmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("DepartmentUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([createdById])
+  @@index([updatedById])
+  @@map("departments")
+}
+
+model Employee {
+  id             String   @id @default(uuid()) @db.Char(36)
+  employeeNumber String   @unique @map("employee_number") @db.VarChar(50)
+  firstName      String   @map("first_name") @db.VarChar(100)
+  lastName       String   @map("last_name") @db.VarChar(100)
+  email          String   @unique @db.VarChar(255)
+  phone          String?  @db.VarChar(30)
+  jobTitle       String   @map("job_title") @db.VarChar(150)
+  departmentId   String   @map("department_id") @db.Char(36)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  user       User?
+
+  supervisor Supervisor?
+  authority  Authority?
+
+  @@index([departmentId])
+  @@map("employees")
+}
+
+model User {
+  id                 String    @id @default(uuid()) @db.Char(36)
+  employeeId         String    @unique @map("employee_id") @db.Char(36)
+  roleId             String    @map("role_id") @db.Char(36)
+  passwordHash       String    @map("password_hash") @db.Text
+  refreshTokenHash   String?   @map("refresh_token_hash") @db.Text
+  mustChangePassword Boolean   @default(true) @map("must_change_password")
+  passwordChangedAt  DateTime? @map("password_changed_at") @db.DateTime(3)
+  lastLoginAt        DateTime? @map("last_login_at") @db.DateTime(3)
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  role     Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  departmentsCreated Department[] @relation("DepartmentCreatedBy")
+  departmentsUpdated Department[] @relation("DepartmentUpdatedBy")
+
+  @@index([roleId])
+  @@map("users")
+}
+
+model Supervisor {
+  id         String   @id @default(uuid()) @db.Char(36)
+  employeeId String   @unique @map("employee_id") @db.Char(36)
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  internships Internship[]
+
+  @@map("supervisors")
+}
+
+model Authority {
+  id           String   @id @default(uuid()) @db.Char(36)
+  employeeId   String   @unique @map("employee_id") @db.Char(36)
+  departmentId String?  @map("department_id") @db.Char(36)
+  name         String   @db.VarChar(200)
+  email        String   @unique @db.VarChar(255)
+  signingTitle String   @map("signing_title") @db.VarChar(150)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  internships Internship[]
+
+  @@index([departmentId])
+  @@map("authorities")
+}
+
+model Intern {
+  id                    String         @id @default(uuid()) @db.Char(36)
+  registrationCode      String         @unique @map("registration_code") @db.VarChar(30)
+  firstName             String         @map("first_name") @db.VarChar(100)
+  lastName              String         @map("last_name") @db.VarChar(100)
+  dateOfBirth           DateTime       @map("date_of_birth") @db.Date
+  gender                Gender
+  email                 String         @unique @db.VarChar(255)
+  phone                 String         @db.VarChar(30)
+  address               String?        @db.Text
+  school                String         @db.VarChar(200)
+  fieldOfStudy          String         @map("field_of_study") @db.VarChar(200)
+  educationLevel        EducationLevel @map("education_level")
+  studyYear             Int            @map("study_year") @db.SmallInt
+  emergencyContactName  String?        @map("emergency_contact_name") @db.VarChar(200)
+  emergencyContactPhone String?        @map("emergency_contact_phone") @db.VarChar(30)
+  isActive              Boolean        @default(true) @map("is_active")
+  createdAt             DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime       @updatedAt @map("updated_at") @db.DateTime(3)
+
+  internships Internship[]
+
+  @@map("interns")
+}
+
+model Internship {
+  id               String           @id @default(uuid()) @db.Char(36)
+  referenceCode    String           @unique @map("reference_code") @db.VarChar(30)
+  title            String           @db.VarChar(200)
+  description      String?          @db.Text
+  startDate        DateTime         @map("start_date") @db.Date
+  endDate          DateTime         @map("end_date") @db.Date
+  status           InternshipStatus @default(PLANNED)
+  internshipType   InternshipType   @map("internship_type")
+  monthlyAllowance Decimal?         @map("monthly_allowance") @db.Decimal(12, 2)
+  currency         String           @default("XOF") @db.Char(3)
+  workLocation     String           @map("work_location") @db.VarChar(200)
+  internId         String           @map("intern_id") @db.Char(36)
+  departmentId     String           @map("department_id") @db.Char(36)
+  supervisorId     String           @map("supervisor_id") @db.Char(36)
+  authorityId      String?          @map("authority_id") @db.Char(36)
+  grade            Int?             @db.TinyInt
+  isActive         Boolean          @default(true) @map("is_active")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
+
+  intern     Intern     @relation(fields: [internId], references: [id], onDelete: Restrict)
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  supervisor Supervisor @relation(fields: [supervisorId], references: [id], onDelete: Restrict)
+  authority  Authority? @relation(fields: [authorityId], references: [id], onDelete: Restrict)
+
+  projectAssignments ProjectAssignment[]
+
+  @@index([internId])
+  @@index([departmentId])
+  @@index([supervisorId])
+  @@index([authorityId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("internships")
+}
+
+model Project {
+  id           String        @id @default(uuid()) @db.Char(36)
+  projectCode  String        @unique @map("project_code") @db.VarChar(30)
+  name         String        @db.VarChar(200)
+  description  String?       @db.Text
+  gitlabLink   String?       @map("gitlab_link") @db.VarChar(500)
+  startDate    DateTime      @map("start_date") @db.Date
+  endDate      DateTime      @map("end_date") @db.Date
+  status       ProjectStatus @default(PLANNED)
+  departmentId String        @map("department_id") @db.Char(36)
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.DateTime(3)
+
+  department         Department          @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  projectAssignments ProjectAssignment[]
+
+  @@index([departmentId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("projects")
+}
+
+model ProjectAssignment {
+  id           String           @id @default(uuid()) @db.Char(36)
+  internshipId String           @map("internship_id") @db.Char(36)
+  projectId    String           @map("project_id") @db.Char(36)
+  role         String           @db.VarChar(150)
+  assignedAt   DateTime         @default(now()) @map("assigned_at") @db.DateTime(3)
+  startDate    DateTime         @map("start_date") @db.Date
+  endDate      DateTime         @map("end_date") @db.Date
+  status       AssignmentStatus @default(ASSIGNED)
+  notes        String?          @db.Text
+  createdAt    DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.DateTime(3)
+
+  internship Internship @relation(fields: [internshipId], references: [id], onDelete: Restrict)
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@unique([internshipId, projectId])
+  @@index([projectId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("project_assignments")
+}
