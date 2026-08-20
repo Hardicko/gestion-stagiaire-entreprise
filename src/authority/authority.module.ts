@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AuthorityService } from './authority.service';
+
+import { AuthModule } from '../auth/auth.module';
 import { AuthorityController } from './authority.controller';
+import { AuthorityService } from './authority.service';
 
 @Module({
+  imports: [AuthModule],
   controllers: [AuthorityController],
   providers: [AuthorityService],
 })
