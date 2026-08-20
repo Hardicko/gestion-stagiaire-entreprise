@@ -1,0 +1,26 @@
+name: gestion-stagiaire
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: gestion-stagiaire-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gestion_stagiaire}
+      MYSQL_USER: ${MYSQL_USER:-gestion_stagiaire}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gestion_stagiaire_dev}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-gestion_stagiaire_root_dev}
+    ports:
+      - '${MYSQL_LOCAL_PORT:-3306}:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  mysql_data:
+    name: gestion-stagiaire-mysql-data
