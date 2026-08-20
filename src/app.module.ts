@@ -3,8 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthorityModule } from './authority/authority.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { DepartmentModule } from './department/department.module';
 import { EmployeeModule } from './employee/employee.module';
 import { HealthModule } from './health/health.module';
@@ -26,6 +28,7 @@ import { UserModule } from './user/user.module';
     RoleModule,
     EmployeeModule,
     AuthModule,
+    AuditModule,
     UserModule,
     InternModule,
     SupervisorModule,
@@ -33,6 +36,7 @@ import { UserModule } from './user/user.module';
     InternshipModule,
     ProjectModule,
     ProjectAssignmentModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

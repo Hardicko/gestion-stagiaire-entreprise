@@ -10,16 +10,20 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles/roles.decorator';
 import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
 
+@ApiTags('Utilisateurs')
+@ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMINISTRATEUR')

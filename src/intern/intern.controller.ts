@@ -9,14 +9,18 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { CreateInternDto } from './dto/create-intern.dto';
 import { UpdateInternDto } from './dto/update-intern.dto';
 import { InternService } from './intern.service';
 
+@ApiTags('Stagiaires')
+@ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('interns')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class InternController {

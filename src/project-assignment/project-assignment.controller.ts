@@ -9,14 +9,18 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { CreateProjectAssignmentDto } from './dto/create-project-assignment.dto';
 import { UpdateProjectAssignmentDto } from './dto/update-project-assignment.dto';
 import { ProjectAssignmentService } from './project-assignment.service';
 
+@ApiTags('Affectations de projets')
+@ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('project-assignments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ProjectAssignmentController {

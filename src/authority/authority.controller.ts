@@ -9,14 +9,18 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { AuthorityService } from './authority.service';
 import { CreateAuthorityDto } from './dto/create-authority.dto';
 import { UpdateAuthorityDto } from './dto/update-authority.dto';
 
+@ApiTags('Autorités')
+@ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('authorities')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AuthorityController {

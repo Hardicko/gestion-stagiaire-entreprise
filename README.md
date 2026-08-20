@@ -1,70 +1,77 @@
+# Gestion des stagiaires — backend entreprise
 
-## Description
+API NestJS connectée à MySQL avec Prisma. Elle gère l’authentification, les employés, les stagiaires, les stages, les projets, le tableau de bord et les ressources administratives associées.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Installation
 
-## Project setup
-
-```bash
-$ npm install
+```powershell
+npm install
+Copy-Item .env.example .env
+npx prisma generate
+npx prisma migrate deploy
 ```
 
-## Compile and run the project
+Renseignez ensuite le mot de passe MySQL et un `JWT_SECRET` long et aléatoire dans `.env`.
 
-```bash
-# development
-$ npm run start
+## Démarrage
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```powershell
+npm run start:dev
 ```
 
-## Run tests
+Par défaut, l’API écoute sur `http://localhost:3000`.
 
-```bash
-# unit tests
-$ npm run test
+## Documentation de l’API
 
-# e2e tests
-$ npm run test:e2e
+- Interface Swagger : `http://localhost:3000/api/docs`
+- Contrat OpenAPI JSON : `http://localhost:3000/api/docs-json`
 
-# test coverage
-$ npm run test:cov
+Pour tester une route protégée dans Swagger :
+
+1. exécutez `POST /auth/login` ;
+2. copiez la valeur `accessToken` retournée ;
+3. cliquez sur **Authorize** ;
+4. collez uniquement le JWT, sans ajouter le mot `Bearer`.
+
+Les routes de consultation sont accessibles aux utilisateurs authentifiés selon leurs autorisations. Les opérations administratives exigent le rôle `ADMINISTRATEUR`.
+
+## Journal d’audit
+
+Les requêtes de modification `POST`, `PATCH` et `DELETE` sont journalisées automatiquement. Chaque événement indique notamment l’auteur, l’action, la ressource, le résultat, la date, l’adresse IP et des métadonnées nettoyées. Les mots de passe, jetons et en-têtes d’autorisation ne sont jamais conservés dans les métadonnées.
+
+Le journal est en lecture seule dans l’API et réservé au rôle `ADMINISTRATEUR` :
+
+- `GET /audit-logs` : liste paginée, filtrable par action, résultat, ressource, utilisateur et période ;
+- `GET /audit-logs/:id` : détail d’un événement.
+
+Le tableau de bord utilise les événements réussis de ce journal pour fournir ses activités récentes.
+
+## Principales ressources
+
+| Domaine                 | Route                  |
+| ----------------------- | ---------------------- |
+| Authentification        | `/auth`                |
+| Utilisateurs            | `/users`               |
+| Rôles                   | `/roles`               |
+| Départements            | `/departments`         |
+| Employés                | `/employees`           |
+| Stagiaires              | `/interns`             |
+| Encadreurs              | `/supervisors`         |
+| Autorités               | `/authorities`         |
+| Stages                  | `/internships`         |
+| Projets                 | `/projects`            |
+| Affectations de projets | `/project-assignments` |
+| Tableau de bord         | `/dashboard`           |
+| Journal d’audit         | `/audit-logs`          |
+| Santé de la base        | `/health/database`     |
+
+## Vérification
+
+```powershell
+npx prisma validate
+npm run build
+npm test -- --runInBand
+npm run test:e2e -- --runInBand
 ```
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Les tests utilisent des services Prisma simulés et ne modifient pas la base MySQL de l’entreprise.
