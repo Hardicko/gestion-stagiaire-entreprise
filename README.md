@@ -2,6 +2,8 @@
 
 API NestJS connectée à MySQL avec Prisma. Elle gère l’authentification, les employés, les stagiaires, les stages, les projets, le tableau de bord et les ressources administratives associées.
 
+Le document [Guide fonctionnel et technique du backend](docs/GUIDE_BACKEND.md) explique chaque domaine, ses routes, ses droits, ses relations et les termes qui peuvent être confondus.
+
 ## Installation
 
 ```powershell
