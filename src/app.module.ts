@@ -6,6 +6,8 @@ import { ConfigModule } from '@nestjs/config';
 import { HealthModule } from './health/health.module';
 import { DepartmentModule } from './department/department.module';
 import { RoleModule } from './role/role.module';
+import { EmployeeModule } from './employee/employee.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { RoleModule } from './role/role.module';
     HealthModule,
     DepartmentModule,
     RoleModule,
+    EmployeeModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
