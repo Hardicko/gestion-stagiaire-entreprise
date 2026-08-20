@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
-import { ConfigModule } from '@nestjs/config';
-import { HealthModule } from './health/health.module';
-import { DepartmentModule } from './department/department.module';
-import { RoleModule } from './role/role.module';
-import { EmployeeModule } from './employee/employee.module';
 import { AuthModule } from './auth/auth.module';
+import { DepartmentModule } from './department/department.module';
+import { EmployeeModule } from './employee/employee.module';
+import { HealthModule } from './health/health.module';
+import { InternModule } from './intern/intern.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { AuthModule } from './auth/auth.module';
     RoleModule,
     EmployeeModule,
     AuthModule,
+    InternModule,
   ],
   controllers: [AppController],
   providers: [AppService],

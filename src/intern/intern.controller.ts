@@ -1,21 +1,29 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { InternService } from './intern.service';
+
+import { Roles } from '../auth/decorators/roles/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles/roles.guard';
 import { CreateInternDto } from './dto/create-intern.dto';
 import { UpdateInternDto } from './dto/update-intern.dto';
+import { InternService } from './intern.service';
 
-@Controller('intern')
+@Controller('interns')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class InternController {
   constructor(private readonly internService: InternService) {}
 
   @Post()
+  @Roles('ADMINISTRATEUR')
   create(@Body() createInternDto: CreateInternDto) {
     return this.internService.create(createInternDto);
   }
@@ -26,17 +34,22 @@ export class InternController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.internService.findOne(+id);
+  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.internService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateInternDto: UpdateInternDto) {
-    return this.internService.update(+id, updateInternDto);
+  @Roles('ADMINISTRATEUR')
+  update(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() updateInternDto: UpdateInternDto,
+  ) {
+    return this.internService.update(id, updateInternDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.internService.remove(+id);
+  @Roles('ADMINISTRATEUR')
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.internService.remove(id);
   }
 }

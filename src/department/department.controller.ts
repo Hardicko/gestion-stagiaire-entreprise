@@ -9,16 +9,16 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { DepartmentService } from './department.service';
+
+import { Roles } from '../auth/decorators/roles/roles.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles/roles.guard';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { DepartmentService } from './department.service';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMINISTRATEUR')
 @Controller('departments')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
@@ -28,20 +28,20 @@ export class DepartmentController {
     return this.departmentService.create(createDepartmentDto);
   }
 
-  @Get('path')
+  @Get()
   findAll() {
     return this.departmentService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.departmentService.findOne(id);
   }
 
   @Patch(':id')
   @Roles('ADMINISTRATEUR')
   update(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateDepartmentDto: UpdateDepartmentDto,
   ) {
     return this.departmentService.update(id, updateDepartmentDto);
@@ -49,7 +49,7 @@ export class DepartmentController {
 
   @Delete(':id')
   @Roles('ADMINISTRATEUR')
-  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.departmentService.remove(id);
   }
 }
