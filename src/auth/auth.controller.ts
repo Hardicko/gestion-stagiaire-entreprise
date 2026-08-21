@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { AuthService } from './auth.service';
+import { AllowPasswordChangeRequired } from './decorators/password-change/allow-password-change-required.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import type { AuthenticatedRequest } from './guards/jwt-auth.guard';
@@ -31,6 +32,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @AllowPasswordChangeRequired()
   @ApiBearerAuth(SWAGGER_BEARER_NAME)
   getProfile(@Req() request: AuthenticatedRequest) {
     return this.authService.getProfile(request.user.sub);
@@ -38,6 +40,7 @@ export class AuthController {
 
   @Patch('change-password')
   @UseGuards(JwtAuthGuard)
+  @AllowPasswordChangeRequired()
   @ApiBearerAuth(SWAGGER_BEARER_NAME)
   changePassword(
     @Req() request: AuthenticatedRequest,

@@ -76,6 +76,7 @@ export class AuthService {
       employeeId: user.employeeId,
       email: user.employee.email,
       role: user.role.name,
+      passwordChangedAt: user.passwordChangedAt?.getTime() ?? null,
     });
 
     await this.prisma.user.update({
