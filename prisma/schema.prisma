@@ -171,12 +171,32 @@ model User {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   role     Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
-  departmentsCreated Department[] @relation("DepartmentCreatedBy")
-  departmentsUpdated Department[] @relation("DepartmentUpdatedBy")
+  departmentsCreated Department[]  @relation("DepartmentCreatedBy")
+  departmentsUpdated Department[]  @relation("DepartmentUpdatedBy")
   auditLogs          AuditLog[]
+  authSessions       AuthSession[]
 
   @@index([roleId])
   @@map("users")
+}
+
+model AuthSession {
+  id               String    @id @default(uuid()) @db.Char(36)
+  userId           String    @map("user_id") @db.Char(36)
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
+  expiresAt        DateTime  @map("expires_at") @db.DateTime(3)
+  lastUsedAt       DateTime? @map("last_used_at") @db.DateTime(3)
+  revokedAt        DateTime? @map("revoked_at") @db.DateTime(3)
+  ipAddress        String?   @map("ip_address") @db.VarChar(45)
+  userAgent        String?   @map("user_agent") @db.VarChar(500)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("auth_sessions")
 }
 
 model Supervisor {

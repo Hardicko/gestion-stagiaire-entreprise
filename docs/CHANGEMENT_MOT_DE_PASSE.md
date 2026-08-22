@@ -2,6 +2,8 @@
 
 Ce document décrit le fonctionnement de sécurité appliqué lors de la première connexion, après une réinitialisation administrative et après un changement de mot de passe.
 
+Depuis l’ajout de la table `auth_sessions`, ces opérations révoquent également les sessions actives. Le renouvellement et la déconnexion sont détaillés dans [Sessions JWT](SESSIONS_JWT.md).
+
 ## 1. Parcours complet
 
 ```text

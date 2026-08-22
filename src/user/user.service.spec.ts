@@ -35,11 +35,17 @@ describe('UserService', () => {
     update: jest.fn(),
     count: jest.fn(),
   };
+  const authSessionRepository = {
+    updateMany: jest.fn(),
+  };
+  const transaction = jest.fn();
 
   const prisma = {
     employee: employeeRepository,
     role: roleRepository,
     user: userRepository,
+    authSession: authSessionRepository,
+    $transaction: transaction,
   } as unknown as PrismaService;
 
   const employeeId = '11111111-1111-4111-8111-111111111111';
@@ -96,6 +102,10 @@ describe('UserService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    authSessionRepository.updateMany.mockResolvedValue({ count: 1 });
+    transaction.mockImplementation(async (operations: Promise<unknown>[]) =>
+      Promise.all(operations),
+    );
     service = new UserService(prisma);
   });
 
@@ -268,6 +278,33 @@ describe('UserService', () => {
     );
   });
 
+  it('révoque les sessions lors de la désactivation via PATCH', async () => {
+    userRepository.findUnique.mockResolvedValue(normalUser);
+    userRepository.update.mockResolvedValue({
+      ...normalUser,
+      isActive: false,
+    });
+
+    await expect(
+      service.update(userId, { isActive: false }, otherUserId),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        isActive: false,
+      }),
+    );
+
+    expect(authSessionRepository.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
+    expect(transaction).toHaveBeenCalled();
+  });
+
   it('refuse de réutiliser le mot de passe actuel lors d’une réinitialisation', async () => {
     userRepository.findUnique.mockResolvedValue({
       id: userId,
@@ -315,6 +352,16 @@ describe('UserService', () => {
         },
       }),
     );
+    expect(authSessionRepository.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
+    expect(transaction).toHaveBeenCalled();
   });
 
   it('refuse la réinitialisation d’un compte désactivé', async () => {
@@ -373,5 +420,15 @@ describe('UserService', () => {
         },
       }),
     );
+    expect(authSessionRepository.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: expect.any(Date),
+      },
+    });
+    expect(transaction).toHaveBeenCalled();
   });
 });

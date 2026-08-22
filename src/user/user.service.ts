@@ -135,7 +135,7 @@ export class UserService {
       await this.ensureAnotherAdministrator(id);
     }
 
-    return this.prisma.user.update({
+    const updateUser = this.prisma.user.update({
       where: { id },
       data: {
         ...(updateUserDto.roleId !== undefined && {
@@ -147,6 +147,26 @@ export class UserService {
       },
       select: this.safeUserSelect,
     });
+
+    if (updateUserDto.isActive !== false) {
+      return updateUser;
+    }
+
+    const revokedAt = new Date();
+    const [updatedUser] = await this.prisma.$transaction([
+      updateUser,
+      this.prisma.authSession.updateMany({
+        where: {
+          userId: id,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt,
+        },
+      }),
+    ]);
+
+    return updatedUser;
   }
 
   async resetPassword(id: string, resetPasswordDto: ResetUserPasswordDto) {
@@ -190,16 +210,30 @@ export class UserService {
       type: argon2.argon2id,
     });
 
-    return this.prisma.user.update({
-      where: { id },
-      data: {
-        passwordHash,
-        mustChangePassword: resetPasswordDto.mustChangePassword ?? true,
-        passwordChangedAt: new Date(),
-        refreshTokenHash: null,
-      },
-      select: this.safeUserSelect,
-    });
+    const passwordChangedAt = new Date();
+    const [updatedUser] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id },
+        data: {
+          passwordHash,
+          mustChangePassword: resetPasswordDto.mustChangePassword ?? true,
+          passwordChangedAt,
+          refreshTokenHash: null,
+        },
+        select: this.safeUserSelect,
+      }),
+      this.prisma.authSession.updateMany({
+        where: {
+          userId: id,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt: passwordChangedAt,
+        },
+      }),
+    ]);
+
+    return updatedUser;
   }
 
   async remove(id: string, actorUserId: string) {
@@ -219,14 +253,28 @@ export class UserService {
       await this.ensureAnotherAdministrator(id);
     }
 
-    return this.prisma.user.update({
-      where: { id },
-      data: {
-        isActive: false,
-        refreshTokenHash: null,
-      },
-      select: this.safeUserSelect,
-    });
+    const revokedAt = new Date();
+    const [updatedUser] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id },
+        data: {
+          isActive: false,
+          refreshTokenHash: null,
+        },
+        select: this.safeUserSelect,
+      }),
+      this.prisma.authSession.updateMany({
+        where: {
+          userId: id,
+          revokedAt: null,
+        },
+        data: {
+          revokedAt,
+        },
+      }),
+    ]);
+
+    return updatedUser;
   }
 
   private async verifyEmployee(employeeId: string) {

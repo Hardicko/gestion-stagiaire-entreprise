@@ -79,7 +79,7 @@ Les relations les plus importantes sont :
 
 L’authentification répond à la question : **qui utilise l’application ?**
 
-Après `POST /auth/login`, le backend retourne un JWT. Les routes protégées doivent recevoir :
+Après `POST /auth/login`, le backend crée une session MySQL et retourne un JWT d’accès valable 15 minutes. Les routes protégées doivent recevoir :
 
 ```text
 Authorization: Bearer VOTRE_JWT
@@ -88,12 +88,13 @@ Authorization: Bearer VOTRE_JWT
 Le JWT contient notamment :
 
 - `sub` : identifiant du compte utilisateur ;
+- `sessionId` : identifiant de la session active dans MySQL ;
 - `employeeId` : identifiant de l’employé correspondant ;
 - `email` : email professionnel de l’employé ;
 - `role` : rôle applicatif de l’utilisateur ;
 - `iat` et `exp` : dates techniques de création et d’expiration du JWT.
 
-Le mot de passe est haché avec Argon2id. Le hash n’est jamais retourné par l’API.
+Le mot de passe est haché avec Argon2id. Le hash n’est jamais retourné par l’API. Un refresh token valable 7 jours permet de renouveler silencieusement le JWT. Seul son hash SHA-256 est conservé dans `auth_sessions`. La révocation de cette session invalide immédiatement les JWT qui lui sont liés. Le fonctionnement complet est détaillé dans [Sessions JWT](SESSIONS_JWT.md).
 
 ### 4.2 Autorisation
 
@@ -107,23 +108,23 @@ Les routes `/auth/me` et `/auth/change-password` concernent le compte connecté.
 
 ## 5. Tableau général des routes
 
-| Domaine          | Route principale       | Consultation                          | Modification                                               |
-| ---------------- | ---------------------- | ------------------------------------- | ---------------------------------------------------------- |
-| Authentification | `/auth`                | Utilisateur connecté pour son profil  | Connexion publique ; changement de son propre mot de passe |
-| Rôles            | `/roles`               | Permission `roles.read`               | Permissions de gestion du rôle                             |
-| Permissions      | `/permissions`         | Permission `permissions.read`         | Catalogue géré par les migrations                          |
-| Départements     | `/departments`         | Permission `departments.read`         | Permissions `create`, `update`, `deactivate`               |
-| Employés         | `/employees`           | Permission `employees.read`           | Permissions `create`, `update`, `deactivate`               |
-| Utilisateurs     | `/users`               | Permission `users.read`               | Permissions de gestion des comptes                         |
-| Encadreurs       | `/supervisors`         | Permission `supervisors.read`         | Permissions `create`, `update`, `deactivate`               |
-| Autorités        | `/authorities`         | Permission `authorities.read`         | Permissions `create`, `update`, `deactivate`               |
-| Stagiaires       | `/interns`             | Permission `interns.read`             | Permissions `create`, `update`, `deactivate`               |
-| Stages           | `/internships`         | Permission `internships.read`         | Permissions `create`, `update`, `deactivate`               |
-| Projets          | `/projects`            | Permission `projects.read`            | Permissions `create`, `update`, `deactivate`               |
-| Affectations     | `/project-assignments` | Permission `project-assignments.read` | Permissions `create`, `update`, `deactivate`               |
-| Tableau de bord  | `/dashboard`           | Permission `dashboard.read`           | Aucune route de modification                               |
-| Journal d’audit  | `/audit-logs`          | Permission `audit-logs.read`          | Aucune route de modification                               |
-| Santé de la base | `/health/database`     | Publique                              | Aucune route de modification                               |
+| Domaine          | Route principale       | Consultation                          | Modification                                             |
+| ---------------- | ---------------------- | ------------------------------------- | -------------------------------------------------------- |
+| Authentification | `/auth`                | Profil et renouvellement de session   | Connexion, déconnexion et changement de son mot de passe |
+| Rôles            | `/roles`               | Permission `roles.read`               | Permissions de gestion du rôle                           |
+| Permissions      | `/permissions`         | Permission `permissions.read`         | Catalogue géré par les migrations                        |
+| Départements     | `/departments`         | Permission `departments.read`         | Permissions `create`, `update`, `deactivate`             |
+| Employés         | `/employees`           | Permission `employees.read`           | Permissions `create`, `update`, `deactivate`             |
+| Utilisateurs     | `/users`               | Permission `users.read`               | Permissions de gestion des comptes                       |
+| Encadreurs       | `/supervisors`         | Permission `supervisors.read`         | Permissions `create`, `update`, `deactivate`             |
+| Autorités        | `/authorities`         | Permission `authorities.read`         | Permissions `create`, `update`, `deactivate`             |
+| Stagiaires       | `/interns`             | Permission `interns.read`             | Permissions `create`, `update`, `deactivate`             |
+| Stages           | `/internships`         | Permission `internships.read`         | Permissions `create`, `update`, `deactivate`             |
+| Projets          | `/projects`            | Permission `projects.read`            | Permissions `create`, `update`, `deactivate`             |
+| Affectations     | `/project-assignments` | Permission `project-assignments.read` | Permissions `create`, `update`, `deactivate`             |
+| Tableau de bord  | `/dashboard`           | Permission `dashboard.read`           | Aucune route de modification                             |
+| Journal d’audit  | `/audit-logs`          | Permission `audit-logs.read`          | Aucune route de modification                             |
+| Santé de la base | `/health/database`     | Publique                              | Aucune route de modification                             |
 
 Pour les domaines CRUD, les routes suivent généralement cette convention :
 
@@ -143,20 +144,23 @@ Dans ce projet, un `DELETE` est généralement une **suppression logique**. L’
 
 **Rôle du domaine**
 
-Identifier l’utilisateur, lui délivrer un JWT et lui permettre de consulter son profil ou de changer son mot de passe.
+Identifier l’utilisateur, créer une session révocable, renouveler son JWT et lui permettre de consulter son profil ou de changer son mot de passe.
 
 **Routes**
 
-- `POST /auth/login` : vérifie l’email et le mot de passe, retourne le JWT et les informations du compte ;
+- `POST /auth/login` : vérifie l’email et le mot de passe, crée la session, retourne le JWT et les informations du compte ;
+- `POST /auth/refresh` : fait tourner le refresh token et retourne un nouveau JWT ;
+- `POST /auth/logout` : révoque la session et supprime le cookie de refresh ;
 - `GET /auth/me` : retourne le profil du compte connecté ;
-- `PATCH /auth/change-password` : change le mot de passe du compte connecté.
+- `PATCH /auth/change-password` : change le mot de passe du compte connecté et révoque toutes ses sessions.
 
 **Règles importantes**
 
 - la connexion utilise l’email de la fiche **Employee**, car le modèle `User` ne possède pas son propre champ email ;
 - le compte, l’employé et le rôle doivent tous être actifs ;
 - le nouveau mot de passe doit être différent de l’ancien ;
-- un changement de mot de passe invalide le hash de rafraîchissement éventuellement enregistré ;
+- un refresh token est utilisable une seule fois avant rotation ;
+- une déconnexion, un changement de mot de passe, une réinitialisation ou une désactivation révoque les sessions concernées ;
 - les connexions et changements de mot de passe sont inscrits dans le journal d’audit.
 
 ### 6.2 Rôles — `/roles`

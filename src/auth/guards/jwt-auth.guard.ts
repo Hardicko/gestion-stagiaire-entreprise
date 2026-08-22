@@ -17,6 +17,8 @@ import type { JwtPayload } from '../interfaces/jwt-payload.interface';
 export const PASSWORD_CHANGE_REQUIRED_CODE = 'PASSWORD_CHANGE_REQUIRED';
 export const TOKEN_REVOKED_CODE = 'TOKEN_REVOKED';
 export const ACCOUNT_UNAVAILABLE_CODE = 'ACCOUNT_UNAVAILABLE';
+export const ACCESS_TOKEN_EXPIRED_CODE = 'ACCESS_TOKEN_EXPIRED';
+export const ACCESS_TOKEN_INVALID_CODE = 'ACCESS_TOKEN_INVALID';
 
 export interface AuthenticatedRequest extends Request {
   user: JwtPayload;
@@ -42,46 +44,73 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       payload = await this.jwtService.verifyAsync<JwtPayload>(token);
-    } catch {
-      throw new UnauthorizedException(
-        'Jeton d’authentification invalide ou expiré.',
-      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException({
+          statusCode: HttpStatus.UNAUTHORIZED,
+          code: ACCESS_TOKEN_EXPIRED_CODE,
+          message: 'Le jeton d’accès a expiré.',
+        });
+      }
+
+      throw new UnauthorizedException({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: ACCESS_TOKEN_INVALID_CODE,
+        message: 'Jeton d’authentification invalide.',
+      });
     }
 
-    if (typeof payload?.sub !== 'string' || payload.sub.trim() === '') {
-      throw new UnauthorizedException(
-        'Jeton d’authentification invalide ou expiré.',
-      );
+    if (
+      typeof payload?.sub !== 'string' ||
+      payload.sub.trim() === '' ||
+      typeof payload.sessionId !== 'string' ||
+      payload.sessionId.trim() === ''
+    ) {
+      throw new UnauthorizedException({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: ACCESS_TOKEN_INVALID_CODE,
+        message: 'Jeton d’authentification invalide.',
+      });
     }
 
-    const account = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
+    const session = await this.prisma.authSession.findUnique({
+      where: {
+        id: payload.sessionId,
+      },
       select: {
         id: true,
-        employeeId: true,
-        isActive: true,
-        mustChangePassword: true,
-        passwordChangedAt: true,
-        employee: {
+        userId: true,
+        expiresAt: true,
+        revokedAt: true,
+        user: {
           select: {
-            email: true,
+            id: true,
+            employeeId: true,
             isActive: true,
-          },
-        },
-        role: {
-          select: {
-            name: true,
-            isActive: true,
-            rolePermissions: {
-              where: {
-                permission: {
-                  isActive: true,
-                },
-              },
+            mustChangePassword: true,
+            passwordChangedAt: true,
+            employee: {
               select: {
-                permission: {
+                email: true,
+                isActive: true,
+              },
+            },
+            role: {
+              select: {
+                name: true,
+                isActive: true,
+                rolePermissions: {
+                  where: {
+                    permission: {
+                      isActive: true,
+                    },
+                  },
                   select: {
-                    code: true,
+                    permission: {
+                      select: {
+                        code: true,
+                      },
+                    },
                   },
                 },
               },
@@ -92,7 +121,21 @@ export class JwtAuthGuard implements CanActivate {
     });
 
     if (
-      !account ||
+      !session ||
+      session.userId !== payload.sub ||
+      session.revokedAt !== null ||
+      session.expiresAt.getTime() <= Date.now()
+    ) {
+      throw new UnauthorizedException({
+        statusCode: HttpStatus.UNAUTHORIZED,
+        code: TOKEN_REVOKED_CODE,
+        message: 'Votre session a expiré ou a été révoquée. Reconnectez-vous.',
+      });
+    }
+
+    const account = session.user;
+
+    if (
       !account.isActive ||
       !account.employee.isActive ||
       !account.role.isActive
@@ -119,6 +162,7 @@ export class JwtAuthGuard implements CanActivate {
 
     request.user = {
       ...payload,
+      sessionId: session.id,
       employeeId: account.employeeId,
       email: account.employee.email,
       role: account.role.name,

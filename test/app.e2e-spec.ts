@@ -54,6 +54,8 @@ describe('Application (e2e)', () => {
     expect(response.body.paths).toEqual(
       expect.objectContaining({
         '/auth/login': expect.any(Object),
+        '/auth/refresh': expect.any(Object),
+        '/auth/logout': expect.any(Object),
         '/users': expect.any(Object),
         '/permissions': expect.any(Object),
         '/roles/{id}/permissions': expect.any(Object),

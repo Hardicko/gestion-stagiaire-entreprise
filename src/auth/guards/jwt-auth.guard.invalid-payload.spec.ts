@@ -16,7 +16,7 @@ describe('JwtAuthGuard avec un contenu JWT mal formé', () => {
       verifyAsync: jest.fn().mockResolvedValue({ role: 'ADMINISTRATEUR' }),
     } as unknown as JwtService;
     const prisma = {
-      user: { findUnique: jest.fn() },
+      authSession: { findUnique: jest.fn() },
     } as unknown as PrismaService;
     const reflector = {
       getAllAndOverride: jest.fn(),
@@ -33,6 +33,6 @@ describe('JwtAuthGuard avec un contenu JWT mal formé', () => {
     await expect(guard.canActivate(context)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
-    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+    expect(prisma.authSession.findUnique).not.toHaveBeenCalled();
   });
 });

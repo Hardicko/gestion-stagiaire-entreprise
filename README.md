@@ -2,7 +2,7 @@
 
 API NestJS connectée à MySQL avec Prisma. Elle gère l’authentification, les employés, les stagiaires, les stages, les projets, le tableau de bord et les ressources administratives associées.
 
-Le document [Guide fonctionnel et technique du backend](docs/GUIDE_BACKEND.md) explique chaque domaine, ses routes, ses relations et les termes qui peuvent être confondus. Le document [Rôles et permissions](docs/ROLES_PERMISSIONS.md) décrit le contrôle d’accès dynamique et son utilisation par le frontend.
+Le document [Guide fonctionnel et technique du backend](docs/GUIDE_BACKEND.md) explique chaque domaine, ses routes, ses relations et les termes qui peuvent être confondus. Le document [Rôles et permissions](docs/ROLES_PERMISSIONS.md) décrit le contrôle d’accès dynamique. Le guide [Sessions JWT](docs/SESSIONS_JWT.md) explique le renouvellement automatique, la déconnexion immédiate et l’intégration frontend/Postman.
 
 ## Installation
 
@@ -13,7 +13,7 @@ npx prisma generate
 npx prisma migrate deploy
 ```
 
-Renseignez ensuite le mot de passe MySQL et un `JWT_SECRET` long et aléatoire dans `.env`.
+Renseignez ensuite le mot de passe MySQL et un `JWT_SECRET` long et aléatoire dans `.env`. Les durées par défaut sont de 15 minutes pour le JWT d’accès et de 7 jours pour le refresh token.
 
 ## Démarrage
 
@@ -36,6 +36,8 @@ Pour tester une route protégée dans Swagger :
 4. collez uniquement le JWT, sans ajouter le mot `Bearer`.
 
 Chaque route protégée exige maintenant une permission précise. Les réponses de connexion et de profil retournent le rôle et les codes de permissions destinés au frontend.
+
+La connexion crée également une session MySQL. `POST /auth/refresh` renouvelle le JWT et `POST /auth/logout` révoque immédiatement la session. Postman conserve automatiquement le cookie de refresh lorsque son gestionnaire de cookies est actif.
 
 ## Journal d’audit
 
