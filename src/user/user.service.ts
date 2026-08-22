@@ -11,8 +11,6 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
-const ALLOWED_ROLE_NAMES = ['ADMINISTRATEUR', 'UTILISATEUR'];
-
 @Injectable()
 export class UserService {
   private readonly safeUserSelect = {
@@ -252,9 +250,6 @@ export class UserService {
       where: {
         id: roleId,
         isActive: true,
-        name: {
-          in: ALLOWED_ROLE_NAMES,
-        },
       },
       select: {
         id: true,
@@ -263,9 +258,7 @@ export class UserService {
     });
 
     if (!role) {
-      throw new NotFoundException(
-        'Rôle actif ADMINISTRATEUR ou UTILISATEUR introuvable.',
-      );
+      throw new NotFoundException('Rôle actif introuvable.');
     }
 
     return role;

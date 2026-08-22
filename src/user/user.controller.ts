@@ -12,10 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { Roles } from '../auth/decorators/roles/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions/require-permissions.decorator';
 import type { AuthenticatedRequest } from '../auth/guards/jwt-auth.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions/permissions.guard';
+import { PERMISSIONS } from '../auth/permissions.constants';
 import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
@@ -25,27 +26,30 @@ import { UserService } from './user.service';
 @ApiTags('Utilisateurs')
 @ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMINISTRATEUR')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @RequirePermissions(PERMISSIONS.USERS_CREATE)
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
 
   @Get()
+  @RequirePermissions(PERMISSIONS.USERS_READ)
   findAll() {
     return this.userService.findAll();
   }
 
   @Get(':id')
+  @RequirePermissions(PERMISSIONS.USERS_READ)
   findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.userService.findOne(id);
   }
 
   @Patch(':id/reset-password')
+  @RequirePermissions(PERMISSIONS.USERS_RESET_PASSWORD)
   resetPassword(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() resetPasswordDto: ResetUserPasswordDto,
@@ -54,6 +58,7 @@ export class UserController {
   }
 
   @Patch(':id')
+  @RequirePermissions(PERMISSIONS.USERS_UPDATE)
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -63,6 +68,7 @@ export class UserController {
   }
 
   @Delete(':id')
+  @RequirePermissions(PERMISSIONS.USERS_DEACTIVATE)
   remove(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Req() request: AuthenticatedRequest,

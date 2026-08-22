@@ -11,6 +11,7 @@ import { DepartmentModule } from './department/department.module';
 import { EmployeeModule } from './employee/employee.module';
 import { HealthModule } from './health/health.module';
 import { InternModule } from './intern/intern.module';
+import { PermissionModule } from './permission/permission.module';
 import { InternshipModule } from './internship/internship.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectAssignmentModule } from './project-assignment/project-assignment.module';
@@ -25,6 +26,7 @@ import { UserModule } from './user/user.module';
     PrismaModule,
     HealthModule,
     DepartmentModule,
+    PermissionModule,
     RoleModule,
     EmployeeModule,
     AuthModule,

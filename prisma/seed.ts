@@ -2,6 +2,10 @@ import 'dotenv/config';
 import * as argon2 from 'argon2';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from '../src/generated/prisma/client';
+import {
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSION_CATALOG,
+} from '../src/auth/permissions.constants';
 
 function getRequiredEnvironmentVariable(name: string): string {
   const value = process.env[name];
@@ -25,13 +29,29 @@ const adapter = new PrismaMariaDb({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const adminEmail = getRequiredEnvironmentVariable(
-    'SEED_ADMIN_EMAIL',
-  ).toLowerCase();
+  for (const permission of PERMISSION_CATALOG) {
+    await prisma.permission.upsert({
+      where: {
+        code: permission.code,
+      },
+      update: {
+        name: permission.name,
+        description: permission.description,
+        category: permission.category,
+        isActive: true,
+      },
+      create: {
+        ...permission,
+        isActive: true,
+      },
+    });
+  }
 
-  const standardUserEmail = getRequiredEnvironmentVariable(
-    'SEED_USER_EMAIL',
-  ).toLowerCase();
+  const adminEmail =
+    getRequiredEnvironmentVariable('SEED_ADMIN_EMAIL').toLowerCase();
+
+  const standardUserEmail =
+    getRequiredEnvironmentVariable('SEED_USER_EMAIL').toLowerCase();
 
   const adminPasswordHash = await argon2.hash(
     getRequiredEnvironmentVariable('SEED_ADMIN_PASSWORD'),
@@ -90,6 +110,72 @@ async function main() {
       isActive: true,
     },
   });
+
+  const additionalRoleDefinitions = [
+    {
+      name: 'RH',
+      description: 'Gestion administrative des employés, stagiaires et stages',
+    },
+    {
+      name: 'ENCADREUR',
+      description: 'Consultation des données nécessaires au suivi des stages',
+    },
+    {
+      name: 'DIRECTION',
+      description: 'Consultation globale, statistiques et audit',
+    },
+  ] as const;
+
+  const defaultRoles: Record<string, { id: string }> = {
+    ADMINISTRATEUR: administratorRole,
+    UTILISATEUR: standardRole,
+  };
+
+  for (const roleDefinition of additionalRoleDefinitions) {
+    defaultRoles[roleDefinition.name] = await prisma.role.upsert({
+      where: {
+        name: roleDefinition.name,
+      },
+      update: {
+        description: roleDefinition.description,
+        isActive: true,
+      },
+      create: {
+        ...roleDefinition,
+        isActive: true,
+      },
+    });
+  }
+
+  for (const [roleName, permissionCodes] of Object.entries(
+    DEFAULT_ROLE_PERMISSIONS,
+  )) {
+    const role = defaultRoles[roleName];
+
+    if (!role) {
+      continue;
+    }
+
+    const permissions = await prisma.permission.findMany({
+      where: {
+        code: {
+          in: [...permissionCodes],
+        },
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    await prisma.rolePermission.createMany({
+      data: permissions.map(({ id: permissionId }) => ({
+        roleId: role.id,
+        permissionId,
+      })),
+      skipDuplicates: true,
+    });
+  }
 
   const adminEmployee = await prisma.employee.upsert({
     where: {
@@ -165,7 +251,7 @@ async function main() {
     },
   });
 
-  console.log('Les comptes ADMINISTRATEUR et UTILISATEUR sont prêts.');
+  console.log('Les rôles, permissions et comptes initiaux sont prêts.');
 }
 
 main()

@@ -1,11 +1,14 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto/change-password.dto';
-
 
 @Injectable()
 export class AuthService {
@@ -49,6 +52,20 @@ export class AuthService {
           select: {
             id: true,
             name: true,
+            rolePermissions: {
+              where: {
+                permission: {
+                  isActive: true,
+                },
+              },
+              select: {
+                permission: {
+                  select: {
+                    code: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -57,7 +74,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Email ou mot de passe incorrect.');
     }
-    
+
     const passwordIsValid = await argon2.verify(
       user.passwordHash,
       loginDto.password,
@@ -102,6 +119,9 @@ export class AuthService {
         jobTitle: user.employee.jobTitle,
         department: user.employee.department,
         role: user.role.name,
+        permissions: user.role.rolePermissions.map(
+          ({ permission }) => permission.code,
+        ),
         mustChangePassword: user.mustChangePassword,
       },
     };
@@ -142,15 +162,27 @@ export class AuthService {
           select: {
             id: true,
             name: true,
+            rolePermissions: {
+              where: {
+                permission: {
+                  isActive: true,
+                },
+              },
+              select: {
+                permission: {
+                  select: {
+                    code: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
     if (!user) {
-      throw new UnauthorizedException(
-        'Utilisateur introuvable ou désactivé.',
-      );
+      throw new UnauthorizedException('Utilisateur introuvable ou désactivé.');
     }
 
     return {
@@ -164,92 +196,85 @@ export class AuthService {
       jobTitle: user.employee.jobTitle,
       department: user.employee.department,
       role: user.role.name,
+      permissions: user.role.rolePermissions.map(
+        ({ permission }) => permission.code,
+      ),
       mustChangePassword: user.mustChangePassword,
       lastLoginAt: user.lastLoginAt,
     };
   }
 
-  async changePassword(
-  userId: string,
-  changePasswordDto: ChangePasswordDto,
-) {
-  const {
-    currentPassword,
-    newPassword,
-    confirmNewPassword,
-  } = changePasswordDto;
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const { currentPassword, newPassword, confirmNewPassword } =
+      changePasswordDto;
 
-  if (newPassword !== confirmNewPassword) {
-    throw new BadRequestException(
-      'La confirmation du nouveau mot de passe ne correspond pas.',
-    );
-  }
+    if (newPassword !== confirmNewPassword) {
+      throw new BadRequestException(
+        'La confirmation du nouveau mot de passe ne correspond pas.',
+      );
+    }
 
-  const user = await this.prisma.user.findFirst({
-    where: {
-      id: userId,
-      isActive: true,
-      employee: {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
         isActive: true,
+        employee: {
+          isActive: true,
+        },
+        role: {
+          isActive: true,
+        },
       },
-      role: {
-        isActive: true,
+      select: {
+        id: true,
+        passwordHash: true,
       },
-    },
-    select: {
-      id: true,
-      passwordHash: true,
-    },
-  });
+    });
 
-  if (!user) {
-    throw new UnauthorizedException(
-      'Utilisateur introuvable ou désactivé.',
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur introuvable ou désactivé.');
+    }
+
+    const currentPasswordIsValid = await argon2.verify(
+      user.passwordHash,
+      currentPassword,
     );
-  }
 
-  const currentPasswordIsValid = await argon2.verify(
-    user.passwordHash,
-    currentPassword,
-  );
+    if (!currentPasswordIsValid) {
+      throw new UnauthorizedException('Le mot de passe actuel est incorrect.');
+    }
 
-  if (!currentPasswordIsValid) {
-    throw new UnauthorizedException(
-      'Le mot de passe actuel est incorrect.',
+    const newPasswordIsSameAsCurrent = await argon2.verify(
+      user.passwordHash,
+      newPassword,
     );
-  }
 
-  const newPasswordIsSameAsCurrent = await argon2.verify(
-    user.passwordHash,
-    newPassword,
-  );
+    if (newPasswordIsSameAsCurrent) {
+      throw new BadRequestException(
+        'Le nouveau mot de passe doit être différent de l’ancien.',
+      );
+    }
 
-  if (newPasswordIsSameAsCurrent) {
-    throw new BadRequestException(
-      'Le nouveau mot de passe doit être différent de l’ancien.',
-    );
-  }
+    const newPasswordHash = await argon2.hash(newPassword, {
+      type: argon2.argon2id,
+    });
 
-  const newPasswordHash = await argon2.hash(newPassword, {
-    type: argon2.argon2id,
-  });
+    await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        passwordHash: newPasswordHash,
+        mustChangePassword: false,
+        passwordChangedAt: new Date(),
+        refreshTokenHash: null,
+      },
+    });
 
-  await this.prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      passwordHash: newPasswordHash,
+    return {
+      message: 'Mot de passe modifié avec succès.',
       mustChangePassword: false,
-      passwordChangedAt: new Date(),
-      refreshTokenHash: null,
-    },
-  });
-
-  return {
-    message: 'Mot de passe modifié avec succès.',
-    mustChangePassword: false,
-    requiresLogin: true,
-  };
-}
+      requiresLogin: true,
+    };
+  }
 }

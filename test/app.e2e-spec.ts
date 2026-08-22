@@ -55,6 +55,8 @@ describe('Application (e2e)', () => {
       expect.objectContaining({
         '/auth/login': expect.any(Object),
         '/users': expect.any(Object),
+        '/permissions': expect.any(Object),
+        '/roles/{id}/permissions': expect.any(Object),
         '/projects': expect.any(Object),
         '/project-assignments': expect.any(Object),
         '/dashboard': expect.any(Object),

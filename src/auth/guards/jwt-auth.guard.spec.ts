@@ -63,6 +63,10 @@ describe('JwtAuthGuard', () => {
     role: {
       name: 'ADMINISTRATEUR',
       isActive: true,
+      rolePermissions: [
+        { permission: { code: 'projects.read' } },
+        { permission: { code: 'dashboard.read' } },
+      ],
     },
   };
 
@@ -128,6 +132,7 @@ describe('JwtAuthGuard', () => {
         employeeId,
         email: 'utilisateur@entreprise.ml',
         role: 'ADMINISTRATEUR',
+        permissions: ['projects.read', 'dashboard.read'],
         passwordChangedAt: passwordChangedAt.getTime(),
       }),
     );

@@ -11,9 +11,10 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { Roles } from '../auth/decorators/roles/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions/require-permissions.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions/permissions.guard';
+import { PERMISSIONS } from '../auth/permissions.constants';
 import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { CreateInternshipDto } from './dto/create-internship.dto';
 import { UpdateInternshipDto } from './dto/update-internship.dto';
@@ -22,28 +23,30 @@ import { InternshipService } from './internship.service';
 @ApiTags('Stages')
 @ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('internships')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class InternshipController {
   constructor(private readonly internshipService: InternshipService) {}
 
   @Post()
-  @Roles('ADMINISTRATEUR')
+  @RequirePermissions(PERMISSIONS.INTERNSHIPS_CREATE)
   create(@Body() createInternshipDto: CreateInternshipDto) {
     return this.internshipService.create(createInternshipDto);
   }
 
   @Get()
+  @RequirePermissions(PERMISSIONS.INTERNSHIPS_READ)
   findAll() {
     return this.internshipService.findAll();
   }
 
   @Get(':id')
+  @RequirePermissions(PERMISSIONS.INTERNSHIPS_READ)
   findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.internshipService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('ADMINISTRATEUR')
+  @RequirePermissions(PERMISSIONS.INTERNSHIPS_UPDATE)
   update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateInternshipDto: UpdateInternshipDto,
@@ -52,7 +55,7 @@ export class InternshipController {
   }
 
   @Delete(':id')
-  @Roles('ADMINISTRATEUR')
+  @RequirePermissions(PERMISSIONS.INTERNSHIPS_DEACTIVATE)
   remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.internshipService.remove(id);
   }

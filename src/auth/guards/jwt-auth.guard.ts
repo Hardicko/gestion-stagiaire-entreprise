@@ -72,6 +72,20 @@ export class JwtAuthGuard implements CanActivate {
           select: {
             name: true,
             isActive: true,
+            rolePermissions: {
+              where: {
+                permission: {
+                  isActive: true,
+                },
+              },
+              select: {
+                permission: {
+                  select: {
+                    code: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -108,6 +122,9 @@ export class JwtAuthGuard implements CanActivate {
       employeeId: account.employeeId,
       email: account.employee.email,
       role: account.role.name,
+      permissions: account.role.rolePermissions.map(
+        ({ permission }) => permission.code,
+      ),
       passwordChangedAt: currentPasswordChangedAt,
     };
 

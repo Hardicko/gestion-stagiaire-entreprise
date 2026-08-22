@@ -13,9 +13,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { Roles } from '../auth/decorators/roles/roles.decorator';
+import { RequirePermissions } from '../auth/decorators/permissions/require-permissions.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { PermissionsGuard } from '../auth/guards/permissions/permissions.guard';
+import { PERMISSIONS } from '../auth/permissions.constants';
 import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { AuditService } from './audit.service';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
@@ -26,8 +27,8 @@ import {
 
 @ApiTags("Journal d'audit")
 @ApiBearerAuth(SWAGGER_BEARER_NAME)
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMINISTRATEUR')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@RequirePermissions(PERMISSIONS.AUDIT_LOGS_READ)
 @Controller('audit-logs')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}

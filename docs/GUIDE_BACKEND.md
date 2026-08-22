@@ -99,41 +99,35 @@ Le mot de passe est haché avec Argon2id. Le hash n’est jamais retourné par l
 
 L’autorisation répond à la question : **qu’a-t-il le droit de faire ?**
 
-Deux rôles applicatifs sont actuellement acceptés lors de la création d’un compte :
+Les rôles et permissions sont dynamiques et enregistrés dans MySQL. Les rôles initiaux sont `ADMINISTRATEUR`, `RH`, `ENCADREUR`, `DIRECTION` et `UTILISATEUR`.
 
-- `ADMINISTRATEUR` ;
-- `UTILISATEUR`.
+Chaque route exige un code précis tel que `projects.read` ou `users.create`. Le rôle `ADMINISTRATEUR` reçoit tous les droits actifs. Le détail complet est disponible dans [Rôles et permissions](ROLES_PERMISSIONS.md).
 
-Règles générales :
-
-- un **ADMINISTRATEUR** peut consulter et administrer les données ;
-- un **UTILISATEUR** authentifié peut principalement consulter les données métier ;
-- la gestion des rôles, employés, comptes utilisateurs et journaux d’audit est réservée à l’administrateur ;
-- les routes `/auth/me` et `/auth/change-password` concernent le compte connecté ;
-- la route de santé de la base est publique dans l’implémentation actuelle.
+Les routes `/auth/me` et `/auth/change-password` concernent le compte connecté. La route de santé de la base reste publique dans l’implémentation actuelle.
 
 ## 5. Tableau général des routes
 
-| Domaine          | Route principale       | Consultation                         | Modification                                               |
-| ---------------- | ---------------------- | ------------------------------------ | ---------------------------------------------------------- |
-| Authentification | `/auth`                | Utilisateur connecté pour son profil | Connexion publique ; changement de son propre mot de passe |
-| Rôles            | `/roles`               | Administrateur                       | Administrateur                                             |
-| Départements     | `/departments`         | Tout utilisateur connecté            | Administrateur                                             |
-| Employés         | `/employees`           | Administrateur                       | Administrateur                                             |
-| Utilisateurs     | `/users`               | Administrateur                       | Administrateur                                             |
-| Encadreurs       | `/supervisors`         | Tout utilisateur connecté            | Administrateur                                             |
-| Autorités        | `/authorities`         | Tout utilisateur connecté            | Administrateur                                             |
-| Stagiaires       | `/interns`             | Tout utilisateur connecté            | Administrateur                                             |
-| Stages           | `/internships`         | Tout utilisateur connecté            | Administrateur                                             |
-| Projets          | `/projects`            | Tout utilisateur connecté            | Administrateur                                             |
-| Affectations     | `/project-assignments` | Tout utilisateur connecté            | Administrateur                                             |
-| Tableau de bord  | `/dashboard`           | Tout utilisateur connecté            | Aucune route de modification                               |
-| Journal d’audit  | `/audit-logs`          | Administrateur                       | Aucune route de modification                               |
-| Santé de la base | `/health/database`     | Publique                             | Aucune route de modification                               |
+| Domaine          | Route principale       | Consultation                          | Modification                                               |
+| ---------------- | ---------------------- | ------------------------------------- | ---------------------------------------------------------- |
+| Authentification | `/auth`                | Utilisateur connecté pour son profil  | Connexion publique ; changement de son propre mot de passe |
+| Rôles            | `/roles`               | Permission `roles.read`               | Permissions de gestion du rôle                             |
+| Permissions      | `/permissions`         | Permission `permissions.read`         | Catalogue géré par les migrations                          |
+| Départements     | `/departments`         | Permission `departments.read`         | Permissions `create`, `update`, `deactivate`               |
+| Employés         | `/employees`           | Permission `employees.read`           | Permissions `create`, `update`, `deactivate`               |
+| Utilisateurs     | `/users`               | Permission `users.read`               | Permissions de gestion des comptes                         |
+| Encadreurs       | `/supervisors`         | Permission `supervisors.read`         | Permissions `create`, `update`, `deactivate`               |
+| Autorités        | `/authorities`         | Permission `authorities.read`         | Permissions `create`, `update`, `deactivate`               |
+| Stagiaires       | `/interns`             | Permission `interns.read`             | Permissions `create`, `update`, `deactivate`               |
+| Stages           | `/internships`         | Permission `internships.read`         | Permissions `create`, `update`, `deactivate`               |
+| Projets          | `/projects`            | Permission `projects.read`            | Permissions `create`, `update`, `deactivate`               |
+| Affectations     | `/project-assignments` | Permission `project-assignments.read` | Permissions `create`, `update`, `deactivate`               |
+| Tableau de bord  | `/dashboard`           | Permission `dashboard.read`           | Aucune route de modification                               |
+| Journal d’audit  | `/audit-logs`          | Permission `audit-logs.read`          | Aucune route de modification                               |
+| Santé de la base | `/health/database`     | Publique                              | Aucune route de modification                               |
 
 Pour les domaines CRUD, les routes suivent généralement cette convention :
 
-| Méthode  | Route            | Rôle                   |
+| Méthode  | Route            | Action exigée          |
 | -------- | ---------------- | ---------------------- |
 | `POST`   | `/ressource`     | Créer                  |
 | `GET`    | `/ressource`     | Lister                 |
@@ -173,18 +167,17 @@ Définir les droits applicatifs attribuables aux comptes utilisateurs.
 
 **Données principales**
 
-- nom du rôle ;
-- description ;
-- état actif/inactif.
+- nom, description et état du rôle ;
+- liste des permissions actives attribuées.
 
 **Actions**
 
 - créer, lister, consulter, modifier et désactiver un rôle ;
-- empêcher la création de deux rôles portant le même nom.
+- remplacer ses permissions avec `PUT /roles/:id/permissions` ;
+- consulter le catalogue avec `GET /permissions` ;
+- attribuer n’importe quel rôle actif à un compte.
 
-**Attention**
-
-La table peut techniquement contenir plusieurs noms, mais le service des utilisateurs n’accepte actuellement que les rôles actifs `ADMINISTRATEUR` et `UTILISATEUR`.
+Le rôle `ADMINISTRATEUR` est protégé et conserve toutes les permissions actives.
 
 ### 6.3 Départements — `/departments`
 
@@ -554,7 +547,7 @@ Exemple : Moussa peut être employé du département informatique, avoir un comp
 ### 7.2 Poste professionnel et rôle applicatif
 
 - `Employee.jobTitle` décrit le **métier dans l’entreprise**, par exemple « Responsable RH » ou « Développeur ».
-- `User.role` décrit les **droits dans l’application**, actuellement `ADMINISTRATEUR` ou `UTILISATEUR`.
+- `User.role` regroupe les **droits dans l’application**. Les rôles initiaux sont `ADMINISTRATEUR`, `RH`, `ENCADREUR`, `DIRECTION` et `UTILISATEUR`.
 
 Un responsable RH n’est donc pas automatiquement administrateur de l’application.
 
@@ -614,7 +607,7 @@ Cette distinction est indispensable lors de la construction des formulaires du f
 
 Pour éviter les erreurs de relations, l’ordre recommandé est :
 
-1. créer les rôles `ADMINISTRATEUR` et `UTILISATEUR` ;
+1. déployer la migration des rôles et permissions ;
 2. créer les départements ;
 3. créer les employés ;
 4. créer les comptes utilisateurs nécessaires ;
@@ -631,6 +624,7 @@ Pour éviter les erreurs de relations, l’ordre recommandé est :
 src/
 ├── auth/                 authentification JWT et changement de mot de passe
 ├── role/                 rôles applicatifs
+├── permission/           catalogue des permissions
 ├── department/           départements
 ├── employee/             personnel de l’entreprise
 ├── user/                 comptes de connexion

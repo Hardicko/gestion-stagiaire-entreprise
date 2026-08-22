@@ -62,6 +62,10 @@ describe('AuthService', () => {
       role: {
         id: '33333333-3333-4333-8333-333333333333',
         name: 'UTILISATEUR',
+        rolePermissions: [
+          { permission: { code: 'dashboard.read' } },
+          { permission: { code: 'projects.read' } },
+        ],
       },
     });
     (argon2.verify as jest.Mock).mockResolvedValue(true);
@@ -86,6 +90,7 @@ describe('AuthService', () => {
         accessToken: 'jwt-signe',
         user: expect.objectContaining({
           mustChangePassword: false,
+          permissions: ['dashboard.read', 'projects.read'],
         }),
       }),
     );

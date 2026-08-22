@@ -118,6 +118,16 @@ describe('UserService', () => {
 
     await expect(service.create(dto)).resolves.toEqual(normalUser);
 
+    expect(roleRepository.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: roleId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
     expect(argon2.hash).toHaveBeenCalledWith(password, {
       type: argon2.argon2id,
     });
