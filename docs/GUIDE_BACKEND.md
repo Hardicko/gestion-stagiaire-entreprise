@@ -459,9 +459,10 @@ La réponse contient notamment :
 - le nombre de projets et leur répartition par statut ;
 - les encadreurs et départements actifs ;
 - les derniers stagiaires enregistrés ;
+- le suivi synthétique des cinq stages actifs les plus récents avec stagiaire, département, encadreur et projet ;
 - les activités récentes provenant du journal d’audit.
 
-Cette route est disponible pour tout utilisateur authentifié et ne modifie aucune donnée.
+Cette route exige la permission `dashboard.read` et ne modifie aucune donnée.
 
 ### 6.13 Journal d’audit — `/audit-logs`
 
@@ -469,12 +470,12 @@ Cette route est disponible pour tout utilisateur authentifié et ne modifie aucu
 
 Conserver une trace persistante des actions importantes effectuées dans l’API.
 
-Le journal enregistre automatiquement les requêtes `POST`, `PATCH` et `DELETE`, notamment :
+Le journal enregistre automatiquement les requêtes `POST`, `PUT`, `PATCH` et `DELETE`, notamment :
 
 - création ;
-- modification ;
+- modification, y compris l’attribution des permissions ;
 - désactivation ou retrait ;
-- connexion ;
+- connexion et déconnexion ;
 - changement de mot de passe ;
 - réinitialisation administrative de mot de passe.
 
@@ -496,7 +497,7 @@ Les mots de passe, JWT et valeurs d’autorisation sont remplacés par `[REDACTE
 - `GET /audit-logs` : liste paginée avec filtres ;
 - `GET /audit-logs/:id` : détail d’un événement.
 
-Les filtres disponibles sont la page, la limite, l’action, le résultat, la ressource, l’utilisateur et la période. Seul un administrateur peut consulter le journal. Aucune route ne permet de modifier ou supprimer un événement d’audit.
+Les filtres disponibles sont la page, la limite, l’action, le résultat, la ressource, l’utilisateur et la période. La consultation exige la permission `audit-logs.read`. Aucune route ne permet de modifier ou supprimer un événement d’audit.
 
 ### 6.14 Santé de la base — `/health/database`
 

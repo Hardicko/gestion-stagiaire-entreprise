@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  AuditOutcome,
-  InternshipStatus,
-  ProjectStatus,
-} from '../generated/prisma/enums';
+import { AuditOutcome } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   DashboardActivityDto,
+  DashboardInternshipTrackingDto,
   DashboardRecentInternDto,
   DashboardResponseDto,
   EMPTY_INTERNSHIP_STATUS_BREAKDOWN,
@@ -95,7 +92,7 @@ export class DashboardService {
       this.prisma.auditLog.findMany({
         where: { outcome: AuditOutcome.SUCCESS },
         orderBy: { createdAt: 'desc' },
-        take: 6,
+        take: 3,
         select: {
           id: true,
           action: true,
@@ -118,6 +115,58 @@ export class DashboardService {
       }),
     ]);
 
+    const recentInternshipRows = await this.prisma.internship.findMany({
+      where: { isActive: true },
+      orderBy: { startDate: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        intern: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
+        supervisor: {
+          select: {
+            id: true,
+            employee: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+        projectAssignments: {
+          where: {
+            status: {
+              not: 'REMOVED',
+            },
+          },
+          orderBy: { assignedAt: 'desc' },
+          take: 1,
+          select: {
+            project: {
+              select: { id: true, name: true, status: true },
+            },
+          },
+        },
+      },
+    });
+
     const internshipStatuses: InternshipStatusBreakdownDto = {
       ...EMPTY_INTERNSHIP_STATUS_BREAKDOWN,
     };
@@ -139,6 +188,22 @@ export class DashboardService {
         latestInternship: internships[0] ?? null,
       }),
     );
+
+    const internshipTracking: DashboardInternshipTrackingDto[] =
+      recentInternshipRows.map(
+        ({ intern, supervisor, projectAssignments, ...internship }) => ({
+          ...internship,
+          intern: {
+            ...intern,
+            fullName: `${intern.firstName} ${intern.lastName}`,
+          },
+          supervisor: {
+            id: supervisor.id,
+            fullName: `${supervisor.employee.firstName} ${supervisor.employee.lastName}`,
+          },
+          project: projectAssignments[0]?.project ?? null,
+        }),
+      );
 
     const recentActivities: DashboardActivityDto[] = recentAuditRows.map(
       (auditLog) => {
@@ -164,14 +229,17 @@ export class DashboardService {
       },
     );
 
-    const activeInternships = Object.values(internshipStatuses).reduce(
-      (total, count) => total + count,
-      0,
-    );
-    const activeProjects = Object.values(projectStatuses).reduce(
-      (total, count) => total + count,
-      0,
-    );
+    const activeInternships =
+      internshipStatuses.PLANNED +
+      internshipStatuses.ONGOING +
+      internshipStatuses.COMPLETED +
+      internshipStatuses.CANCELLED;
+    const activeProjects =
+      projectStatuses.PLANNED +
+      projectStatuses.ONGOING +
+      projectStatuses.COMPLETED +
+      projectStatuses.CANCELLED +
+      projectStatuses.ON_HOLD;
 
     return {
       generatedAt,
@@ -179,9 +247,9 @@ export class DashboardService {
         activeInterns,
         internsAddedThisMonth,
         activeInternships,
-        ongoingInternships: internshipStatuses[InternshipStatus.ONGOING],
+        ongoingInternships: internshipStatuses.ONGOING,
         activeProjects,
-        ongoingProjects: projectStatuses[ProjectStatus.ONGOING],
+        ongoingProjects: projectStatuses.ONGOING,
         activeSupervisors,
         activeDepartments,
       },
@@ -190,6 +258,7 @@ export class DashboardService {
         projects: projectStatuses,
       },
       recentInterns,
+      internshipTracking,
       recentActivities,
     };
   }

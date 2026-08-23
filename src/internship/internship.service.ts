@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { InternshipStatus } from '../generated/prisma/enums';
+import { AssignmentStatus, InternshipStatus } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInternshipDto } from './dto/create-internship.dto';
 import { UpdateInternshipDto } from './dto/update-internship.dto';
@@ -412,6 +412,21 @@ export class InternshipService {
     if (internship.status === InternshipStatus.ONGOING) {
       throw new ConflictException(
         'Un stage en cours doit être terminé ou annulé avant sa désactivation.',
+      );
+    }
+
+    const activeAssignments = await this.prisma.projectAssignment.count({
+      where: {
+        internshipId: id,
+        status: {
+          in: [AssignmentStatus.ASSIGNED, AssignmentStatus.IN_PROGRESS],
+        },
+      },
+    });
+
+    if (activeAssignments > 0) {
+      throw new ConflictException(
+        'Ce stage possède encore des affectations de projet actives.',
       );
     }
 

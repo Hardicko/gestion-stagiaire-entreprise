@@ -183,6 +183,22 @@ export class InternService {
       throw new ConflictException('Ce stagiaire est déjà désactivé.');
     }
 
+    const activeInternships = await this.prisma.internship.count({
+      where: {
+        internId: id,
+        isActive: true,
+        status: {
+          in: ['PLANNED', 'ONGOING'],
+        },
+      },
+    });
+
+    if (activeInternships > 0) {
+      throw new ConflictException(
+        'Ce stagiaire possède encore un stage planifié ou en cours.',
+      );
+    }
+
     return this.prisma.intern.update({
       where: { id },
       data: { isActive: false },

@@ -25,8 +25,13 @@ describe('InternService', () => {
     update: jest.fn(),
   };
 
+  const internshipRepository = {
+    count: jest.fn(),
+  };
+
   const prisma = {
     intern: internRepository,
+    internship: internshipRepository,
   } as unknown as PrismaService;
 
   let service: InternService;
@@ -160,11 +165,25 @@ describe('InternService', () => {
     });
   });
 
+  it('refuse de désactiver un stagiaire qui possède un stage actif', async () => {
+    internRepository.findUnique.mockResolvedValue({
+      id: 'intern-id',
+      isActive: true,
+    });
+    internshipRepository.count.mockResolvedValue(1);
+
+    await expect(service.remove('intern-id')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(internRepository.update).not.toHaveBeenCalled();
+  });
+
   it('désactive le stagiaire sans supprimer sa ligne', async () => {
     internRepository.findUnique.mockResolvedValue({
       id: 'intern-id',
       isActive: true,
     });
+    internshipRepository.count.mockResolvedValue(0);
     internRepository.update.mockResolvedValue({
       id: 'intern-id',
       isActive: false,

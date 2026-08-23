@@ -2,7 +2,7 @@
 
 API NestJS connectée à MySQL avec Prisma. Elle gère l’authentification, les employés, les stagiaires, les stages, les projets, le tableau de bord et les ressources administratives associées.
 
-Le document [Guide fonctionnel et technique du backend](docs/GUIDE_BACKEND.md) explique chaque domaine, ses routes, ses relations et les termes qui peuvent être confondus. Le document [Rôles et permissions](docs/ROLES_PERMISSIONS.md) décrit le contrôle d’accès dynamique. Le guide [Sessions JWT](docs/SESSIONS_JWT.md) explique le renouvellement automatique, la déconnexion immédiate et l’intégration frontend/Postman.
+Le document [Contrat d’intégration frontend](docs/CONTRAT_FRONTEND.md) rassemble les endpoints, réponses, permissions et règles nécessaires à chaque page. Le [Guide fonctionnel et technique du backend](docs/GUIDE_BACKEND.md) explique chaque domaine, ses routes, ses relations et les termes qui peuvent être confondus. Le document [Rôles et permissions](docs/ROLES_PERMISSIONS.md) décrit le contrôle d’accès dynamique. Le guide [Sessions JWT](docs/SESSIONS_JWT.md) explique le renouvellement automatique, la déconnexion immédiate et l’intégration frontend/Postman.
 
 ## Installation
 
@@ -41,7 +41,7 @@ La connexion crée également une session MySQL. `POST /auth/refresh` renouvelle
 
 ## Journal d’audit
 
-Les requêtes de modification `POST`, `PATCH` et `DELETE` sont journalisées automatiquement. Chaque événement indique notamment l’auteur, l’action, la ressource, le résultat, la date, l’adresse IP et des métadonnées nettoyées. Les mots de passe, jetons et en-têtes d’autorisation ne sont jamais conservés dans les métadonnées.
+Les requêtes de modification `POST`, `PUT`, `PATCH` et `DELETE` sont journalisées automatiquement. Chaque événement indique notamment l’auteur, l’action, la ressource, le résultat, la date, l’adresse IP et des métadonnées nettoyées. Les mots de passe, jetons et en-têtes d’autorisation ne sont jamais conservés dans les métadonnées.
 
 Le journal est en lecture seule dans l’API et exige la permission `audit-logs.read` :
 

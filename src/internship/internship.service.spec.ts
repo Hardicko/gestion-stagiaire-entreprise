@@ -28,6 +28,9 @@ describe('InternshipService', () => {
   const authorityRepository = {
     findFirst: jest.fn(),
   };
+  const projectAssignmentRepository = {
+    count: jest.fn(),
+  };
   const internshipRepository = {
     findFirst: jest.fn(),
     findUnique: jest.fn(),
@@ -41,6 +44,7 @@ describe('InternshipService', () => {
     department: departmentRepository,
     supervisor: supervisorRepository,
     authority: authorityRepository,
+    projectAssignment: projectAssignmentRepository,
     internship: internshipRepository,
   } as unknown as PrismaService;
 
@@ -233,12 +237,27 @@ describe('InternshipService', () => {
     expect(internshipRepository.update).not.toHaveBeenCalled();
   });
 
+  it('refuse de désactiver un stage avec une affectation active', async () => {
+    internshipRepository.findUnique.mockResolvedValue({
+      id: 'internship-id',
+      status: InternshipStatus.COMPLETED,
+      isActive: true,
+    });
+    projectAssignmentRepository.count.mockResolvedValue(1);
+
+    await expect(service.remove('internship-id')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+    expect(internshipRepository.update).not.toHaveBeenCalled();
+  });
+
   it('désactive un stage qui n’est pas en cours', async () => {
     internshipRepository.findUnique.mockResolvedValue({
       id: 'internship-id',
       status: InternshipStatus.COMPLETED,
       isActive: true,
     });
+    projectAssignmentRepository.count.mockResolvedValue(0);
     internshipRepository.update.mockResolvedValue({
       id: 'internship-id',
       isActive: false,

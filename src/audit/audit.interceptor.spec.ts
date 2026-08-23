@@ -152,6 +152,48 @@ describe('AuditInterceptor', () => {
     );
   });
 
+  it('journalise la mise à jour des permissions envoyée en PUT', async () => {
+    const context = createContext({
+      method: 'PUT',
+      originalUrl: '/roles/role-1/permissions',
+      params: { id: 'role-1' },
+      body: { permissionIds: ['permission-1'] },
+    });
+    const next = { handle: () => of({ id: 'role-1' }) } as CallHandler;
+
+    await lastValueFrom(interceptor.intercept(context, next));
+
+    expect(recordSafely).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: AuditAction.UPDATE,
+        resource: 'roles',
+        method: 'PUT',
+      }),
+    );
+  });
+
+  it('journalise la déconnexion et masque le refresh token', async () => {
+    const context = createContext({
+      originalUrl: '/auth/logout',
+      body: { refreshToken: 'refresh-tres-secret' },
+    });
+    const next = {
+      handle: () => of({ message: 'Déconnexion effectuée avec succès.' }),
+    } as CallHandler;
+
+    await lastValueFrom(interceptor.intercept(context, next));
+
+    const event = recordSafely.mock.calls[0][0];
+    expect(event).toEqual(
+      expect.objectContaining({
+        action: AuditAction.LOGOUT,
+        resource: 'auth',
+        method: 'POST',
+      }),
+    );
+    expect(event.metadata.requestBody.refreshToken).toBe('[REDACTED]');
+  });
+
   it('ne journalise pas les simples consultations GET', async () => {
     const context = createContext({ method: 'GET', originalUrl: '/projects' });
     const next = { handle: () => of([]) } as CallHandler;

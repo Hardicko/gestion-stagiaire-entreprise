@@ -25,6 +25,7 @@ describe('DashboardService', () => {
   };
   const internshipRepository = {
     groupBy: jest.fn(),
+    findMany: jest.fn(),
   };
   const projectRepository = {
     groupBy: jest.fn(),
@@ -84,6 +85,41 @@ describe('DashboardService', () => {
               id: 'department-1',
               name: 'Informatique',
               code: 'IT',
+            },
+          },
+        ],
+      },
+    ]);
+    internshipRepository.findMany.mockResolvedValue([
+      {
+        id: 'internship-1',
+        title: 'Stage de fin d’études',
+        status: InternshipStatus.ONGOING,
+        startDate: new Date('2026-08-01T00:00:00.000Z'),
+        endDate: new Date('2026-10-31T00:00:00.000Z'),
+        intern: {
+          id: 'intern-1',
+          firstName: 'Awa',
+          lastName: 'Traoré',
+        },
+        department: {
+          id: 'department-1',
+          name: 'Informatique',
+          code: 'IT',
+        },
+        supervisor: {
+          id: 'supervisor-1',
+          employee: {
+            firstName: 'Moussa',
+            lastName: 'Diallo',
+          },
+        },
+        projectAssignments: [
+          {
+            project: {
+              id: 'project-1',
+              name: 'Portail interne',
+              status: ProjectStatus.ONGOING,
             },
           },
         ],
@@ -159,11 +195,19 @@ describe('DashboardService', () => {
         actor: null,
       }),
     ]);
+    expect(result.internshipTracking[0]).toEqual(
+      expect.objectContaining({
+        id: 'internship-1',
+        intern: expect.objectContaining({ fullName: 'Awa Traoré' }),
+        supervisor: expect.objectContaining({ fullName: 'Moussa Diallo' }),
+        project: expect.objectContaining({ name: 'Portail interne' }),
+      }),
+    );
     expect(auditLogRepository.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { outcome: 'SUCCESS' },
         orderBy: { createdAt: 'desc' },
-        take: 6,
+        take: 3,
       }),
     );
     expect(internRepository.count).toHaveBeenNthCalledWith(2, {
@@ -179,6 +223,7 @@ describe('DashboardService', () => {
     supervisorRepository.count.mockResolvedValue(0);
     departmentRepository.count.mockResolvedValue(0);
     internshipRepository.groupBy.mockResolvedValue([]);
+    internshipRepository.findMany.mockResolvedValue([]);
     projectRepository.groupBy.mockResolvedValue([]);
     internRepository.findMany.mockResolvedValue([]);
     auditLogRepository.findMany.mockResolvedValue([]);
@@ -196,6 +241,7 @@ describe('DashboardService', () => {
       activeDepartments: 0,
     });
     expect(result.recentInterns).toEqual([]);
+    expect(result.internshipTracking).toEqual([]);
     expect(result.recentActivities).toEqual([]);
   });
 });

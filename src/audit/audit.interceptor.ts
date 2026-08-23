@@ -16,7 +16,7 @@ type AuditedRequest = Request & Partial<AuthenticatedRequest>;
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  private readonly auditedMethods = new Set(['POST', 'PATCH', 'DELETE']);
+  private readonly auditedMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
   private readonly uuidPattern =
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -94,7 +94,7 @@ export class AuditInterceptor implements NestInterceptor {
       ipAddress: request.ip ?? request.socket.remoteAddress ?? null,
       userAgent: request.get('user-agent') ?? null,
       metadata: this.sanitize({
-        requestBody: request.body,
+        requestBody: request.body as unknown,
         query: request.query,
         durationMs: Date.now() - startedAt,
         ...(error !== undefined && {
@@ -108,6 +108,10 @@ export class AuditInterceptor implements NestInterceptor {
   private resolveAction(method: string, path: string): AuditAction {
     if (path === '/auth/login') {
       return AuditAction.LOGIN;
+    }
+
+    if (path === '/auth/logout') {
+      return AuditAction.LOGOUT;
     }
 
     if (path === '/auth/change-password') {
@@ -246,7 +250,7 @@ export class AuditInterceptor implements NestInterceptor {
       );
     }
 
-    return String(value);
+    return null;
   }
 
   private isSensitiveKey(key: string): boolean {

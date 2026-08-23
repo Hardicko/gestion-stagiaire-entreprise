@@ -73,6 +73,43 @@ export class DashboardActivityActorDto {
   fullName: string;
 }
 
+export class DashboardTrackingInternDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+}
+
+export class DashboardTrackingSupervisorDto {
+  id: string;
+  fullName: string;
+}
+
+export class DashboardTrackingProjectDto {
+  id: string;
+  name: string;
+
+  @ApiProperty({ enum: ProjectStatus })
+  status: ProjectStatus;
+}
+
+export class DashboardInternshipTrackingDto {
+  id: string;
+  title: string;
+
+  @ApiProperty({ enum: InternshipStatus })
+  status: InternshipStatus;
+
+  startDate: Date;
+  endDate: Date;
+  intern: DashboardTrackingInternDto;
+  department: DashboardDepartmentDto;
+  supervisor: DashboardTrackingSupervisorDto;
+
+  @ApiProperty({ type: DashboardTrackingProjectDto, nullable: true })
+  project: DashboardTrackingProjectDto | null;
+}
+
 export class DashboardActivityDto {
   id: string;
 
@@ -95,6 +132,9 @@ export class DashboardResponseDto {
 
   @ApiProperty({ type: [DashboardRecentInternDto] })
   recentInterns: DashboardRecentInternDto[];
+
+  @ApiProperty({ type: [DashboardInternshipTrackingDto] })
+  internshipTracking: DashboardInternshipTrackingDto[];
 
   @ApiProperty({ type: [DashboardActivityDto] })
   recentActivities: DashboardActivityDto[];
