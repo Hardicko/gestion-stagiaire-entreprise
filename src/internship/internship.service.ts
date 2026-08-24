@@ -5,9 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { AssignmentStatus, InternshipStatus } from '../generated/prisma/enums';
+import type { Prisma } from '../generated/prisma/client';
+import {
+  AssignmentStatus,
+  InternshipStatus,
+} from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInternshipDto } from './dto/create-internship.dto';
+import { InternshipTrackingQueryDto } from './dto/internship-tracking-query.dto';
 import { UpdateInternshipDto } from './dto/update-internship.dto';
 
 @Injectable()
@@ -247,6 +252,125 @@ export class InternshipService {
         startDate: 'desc',
       },
     });
+  }
+
+  async getTracking(query: InternshipTrackingQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const search = query.q?.trim();
+    const where: Prisma.InternshipWhereInput = {
+      isActive: true,
+      ...(query.departmentId && { departmentId: query.departmentId }),
+      ...(query.internshipStatus && { status: query.internshipStatus }),
+      ...(query.projectStatus && {
+        projectAssignments: {
+          some: {
+            status: { not: AssignmentStatus.REMOVED },
+            project: {
+              is: {
+                isActive: true,
+                status: query.projectStatus,
+              },
+            },
+          },
+        },
+      }),
+      ...(search && {
+        OR: [
+          { referenceCode: { contains: search } },
+          { title: { contains: search } },
+          {
+            intern: {
+              is: {
+                OR: [
+                  { registrationCode: { contains: search } },
+                  { firstName: { contains: search } },
+                  { lastName: { contains: search } },
+                ],
+              },
+            },
+          },
+          {
+            projectAssignments: {
+              some: {
+                status: { not: AssignmentStatus.REMOVED },
+                project: {
+                  is: {
+                    OR: [
+                      { projectCode: { contains: search } },
+                      { name: { contains: search } },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        ],
+      }),
+    };
+
+    const [
+      items,
+      total,
+      ongoingInternships,
+      plannedInternships,
+      activeProjects,
+      departments,
+    ] = await Promise.all([
+      this.prisma.internship.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: [{ startDate: 'desc' }, { referenceCode: 'asc' }],
+        include: {
+          intern: true,
+          department: true,
+          supervisor: {
+            include: {
+              employee: true,
+            },
+          },
+          projectAssignments: {
+            where: {
+              status: { not: AssignmentStatus.REMOVED },
+            },
+            include: {
+              project: true,
+            },
+            orderBy: {
+              assignedAt: 'desc',
+            },
+          },
+        },
+      }),
+      this.prisma.internship.count({ where }),
+      this.prisma.internship.count({
+        where: { isActive: true, status: InternshipStatus.ONGOING },
+      }),
+      this.prisma.internship.count({
+        where: { isActive: true, status: InternshipStatus.PLANNED },
+      }),
+      this.prisma.project.count({
+        where: { isActive: true },
+      }),
+      this.prisma.department.findMany({
+        where: { isActive: true },
+        select: { id: true, code: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+    ]);
+
+    return {
+      summary: { ongoingInternships, plannedInternships, activeProjects },
+      items,
+      filters: { departments },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {

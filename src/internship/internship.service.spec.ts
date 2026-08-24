@@ -21,6 +21,7 @@ describe('InternshipService', () => {
   };
   const departmentRepository = {
     findFirst: jest.fn(),
+    findMany: jest.fn(),
   };
   const supervisorRepository = {
     findFirst: jest.fn(),
@@ -36,7 +37,11 @@ describe('InternshipService', () => {
     findUnique: jest.fn(),
     create: jest.fn(),
     findMany: jest.fn(),
+    count: jest.fn(),
     update: jest.fn(),
+  };
+  const projectRepository = {
+    count: jest.fn(),
   };
 
   const prisma = {
@@ -46,6 +51,7 @@ describe('InternshipService', () => {
     authority: authorityRepository,
     projectAssignment: projectAssignmentRepository,
     internship: internshipRepository,
+    project: projectRepository,
   } as unknown as PrismaService;
 
   let service: InternshipService;
@@ -184,6 +190,49 @@ describe('InternshipService', () => {
         orderBy: {
           startDate: 'desc',
         },
+      }),
+    );
+  });
+
+  it('retourne le suivi paginé avec ses indicateurs et ses filtres', async () => {
+    internshipRepository.findMany.mockResolvedValue([{ id: 'stage-1' }]);
+    internshipRepository.count
+      .mockResolvedValueOnce(21)
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(3);
+    projectRepository.count.mockResolvedValue(2);
+    departmentRepository.findMany.mockResolvedValue([
+      { id: 'department-id', code: 'DSI', name: 'Informatique' },
+    ]);
+
+    await expect(
+      service.getTracking({
+        q: 'Moussa',
+        page: 2,
+        limit: 10,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        summary: {
+          ongoingInternships: 4,
+          plannedInternships: 3,
+          activeProjects: 2,
+        },
+        items: [{ id: 'stage-1' }],
+        pagination: {
+          page: 2,
+          limit: 10,
+          total: 21,
+          totalPages: 3,
+        },
+      }),
+    );
+
+    expect(internshipRepository.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 10,
+        take: 10,
+        where: expect.objectContaining({ isActive: true }),
       }),
     );
   });

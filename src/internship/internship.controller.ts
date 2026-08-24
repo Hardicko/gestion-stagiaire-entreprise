@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -17,6 +18,7 @@ import { PermissionsGuard } from '../auth/guards/permissions/permissions.guard';
 import { PERMISSIONS } from '../auth/permissions.constants';
 import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { CreateInternshipDto } from './dto/create-internship.dto';
+import { InternshipTrackingQueryDto } from './dto/internship-tracking-query.dto';
 import { UpdateInternshipDto } from './dto/update-internship.dto';
 import { InternshipService } from './internship.service';
 
@@ -37,6 +39,12 @@ export class InternshipController {
   @RequirePermissions(PERMISSIONS.INTERNSHIPS_READ)
   findAll() {
     return this.internshipService.findAll();
+  }
+
+  @Get('tracking')
+  @RequirePermissions(PERMISSIONS.INTERNSHIPS_READ)
+  tracking(@Query() query: InternshipTrackingQueryDto) {
+    return this.internshipService.getTracking(query);
   }
 
   @Get(':id')
