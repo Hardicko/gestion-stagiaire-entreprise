@@ -59,6 +59,7 @@ describe('SupervisorService', () => {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },
@@ -100,6 +101,7 @@ describe('SupervisorService', () => {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },
@@ -158,6 +160,7 @@ describe('SupervisorService', () => {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },

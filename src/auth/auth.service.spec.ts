@@ -63,7 +63,11 @@ describe('AuthService', () => {
       firstName: 'Awa',
       lastName: 'Traoré',
       email: 'awa@entreprise.ml',
-      jobTitle: 'Développeuse',
+      position: {
+        id: 'position-id',
+        code: 'DEV_BACKEND',
+        name: 'Développeuse',
+      },
       department: {
         id: '44444444-4444-4444-8444-444444444444',
         name: 'Informatique',

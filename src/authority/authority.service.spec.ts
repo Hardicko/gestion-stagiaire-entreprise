@@ -72,7 +72,11 @@ describe('AuthorityService', () => {
         isActive: true,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });
@@ -137,7 +141,11 @@ describe('AuthorityService', () => {
         isActive: true,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
       orderBy: {
@@ -166,7 +174,11 @@ describe('AuthorityService', () => {
         departmentId: null,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });
@@ -208,7 +220,11 @@ describe('AuthorityService', () => {
         isActive: false,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });
