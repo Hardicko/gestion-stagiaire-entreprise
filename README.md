@@ -25,8 +25,8 @@ Par défaut, l’API écoute sur `http://localhost:3000`.
 
 ## Documentation de l’API
 
-- Interface Swagger : `http://localhost:3000/api/docs`
-- Contrat OpenAPI JSON : `http://localhost:3000/api/docs-json`
+- Interface Swagger     : `http://localhost:3000/api/docs`
+- Contrat OpenAPI JSON  : `http://localhost:3000/api/docs-json`
 
 Pour tester une route protégée dans Swagger :
 
@@ -45,7 +45,7 @@ Les requêtes de modification `POST`, `PUT`, `PATCH` et `DELETE` sont journalis�
 
 Le journal est en lecture seule dans l’API et exige la permission `audit-logs.read` :
 
-- `GET /audit-logs` : liste paginée, filtrable par action, résultat, ressource, utilisateur et période ;
+- `GET /audit-logs`     : liste paginée, filtrable par action, résultat, ressource, utilisateur et période ;
 - `GET /audit-logs/:id` : détail d’un événement.
 
 Le tableau de bord utilise les événements réussis de ce journal pour fournir ses activités récentes.

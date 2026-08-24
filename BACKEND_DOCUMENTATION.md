@@ -223,10 +223,10 @@ http://localhost:3000
 | `npm run prisma:validate`    | Vérifier le schéma Prisma                      |
 | `npm run prisma:migrate:dev` | Créer et appliquer une migration locale        |
 | `npm run prisma:studio`      | Ouvrir l’interface de consultation des données |
-| `npm run db:up`              | Démarrer MySQL avec Docker Compose        |
-| `npm run db:down`            | Arrêter MySQL                             |
-| `npm run db:logs`            | Suivre les journaux MySQL                 |
-| `npm run db:status`          | Afficher l’état du conteneur MySQL        |
+| `npm run db:up`              | Démarrer MySQL avec Docker Compose             |
+| `npm run db:down`            | Arrêter MySQL                                  |
+| `npm run db:logs`            | Suivre les journaux MySQL                      |
+| `npm run db:status`          | Afficher l’état du conteneur MySQL             |
 
 ## 10. Variables d’environnement
 

@@ -48,19 +48,19 @@ La validation globale rejette les champs inconnus, transforme les valeurs compat
 
 ```mermaid
 erDiagram
-    DEPARTMENT ||--o{ EMPLOYEE : contient
-    EMPLOYEE ||--o| USER : peut_devenir
-    EMPLOYEE ||--o| SUPERVISOR : peut_devenir
-    EMPLOYEE ||--o| AUTHORITY : peut_devenir
-    ROLE ||--o{ USER : autorise
-    INTERN ||--o{ INTERNSHIP : effectue
-    DEPARTMENT ||--o{ INTERNSHIP : accueille
-    SUPERVISOR ||--o{ INTERNSHIP : encadre
-    AUTHORITY o|--o{ INTERNSHIP : signe
-    DEPARTMENT ||--o{ PROJECT : gere
-    INTERNSHIP ||--o{ PROJECT_ASSIGNMENT : recoit
-    PROJECT ||--o{ PROJECT_ASSIGNMENT : recoit
-    USER o|--o{ AUDIT_LOG : realise
+    DEPARTMENT      ||--o{ EMPLOYEE : contient
+    EMPLOYEE        ||--o| USER : peut_devenir
+    EMPLOYEE        ||--o| SUPERVISOR : peut_devenir
+    EMPLOYEE        ||--o| AUTHORITY : peut_devenir
+    ROLE            ||--o{ USER : autorise
+    INTERN          ||--o{ INTERNSHIP : effectue
+    DEPARTMENT      ||--o{ INTERNSHIP : accueille
+    SUPERVISOR      ||--o{ INTERNSHIP : encadre
+    AUTHORITY       o|--o{ INTERNSHIP : signe
+    DEPARTMENT      ||--o{ PROJECT : gere
+    INTERNSHIP      ||--o{ PROJECT_ASSIGNMENT : recoit
+    PROJECT         ||--o{ PROJECT_ASSIGNMENT : recoit
+    USER            o|--o{ AUDIT_LOG : realise
 ```
 
 Les relations les plus importantes sont :
