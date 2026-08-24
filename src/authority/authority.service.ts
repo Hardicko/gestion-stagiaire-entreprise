@@ -73,7 +73,11 @@ export class AuthorityService {
         isActive: createAuthorityDto.isActive ?? true,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });
@@ -85,7 +89,11 @@ export class AuthorityService {
         isActive: true,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
       orderBy: {
@@ -100,7 +108,11 @@ export class AuthorityService {
         id,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });
@@ -173,7 +185,11 @@ export class AuthorityService {
         }),
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });
@@ -212,7 +228,11 @@ export class AuthorityService {
         isActive: false,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            position: true,
+          },
+        },
         department: true,
       },
     });

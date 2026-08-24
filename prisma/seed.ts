@@ -83,6 +83,69 @@ async function main() {
     },
   });
 
+  const defaultPositionDefinitions = [
+    {
+      code: 'DEV_BACKEND',
+      name: 'Développeur backend',
+      description: 'Développement des services backend et des API.',
+    },
+    {
+      code: 'DEV_FRONTEND',
+      name: 'Développeur frontend',
+      description: 'Développement des interfaces utilisateur.',
+    },
+    {
+      code: 'ADMIN_SYSTEME',
+      name: 'Administrateur système',
+      description: 'Administration des systèmes et des plateformes.',
+    },
+    {
+      code: 'RESPONSABLE_RH',
+      name: 'Responsable RH',
+      description: 'Gestion des ressources humaines.',
+    },
+    {
+      code: 'CHEF_PROJET',
+      name: 'Chef de projet',
+      description: 'Pilotage et coordination des projets.',
+    },
+    {
+      code: 'RESPONSABLE_RESEAU',
+      name: 'Responsable réseau',
+      description: 'Administration et supervision du réseau.',
+    },
+    {
+      code: 'ASSISTANT_ADMINISTRATIF',
+      name: 'Assistant administratif',
+      description: 'Assistance aux activités administratives.',
+    },
+  ] as const;
+
+  const defaultPositions: Record<string, { id: string }> = {};
+
+  for (const positionDefinition of defaultPositionDefinitions) {
+    defaultPositions[positionDefinition.code] = await prisma.position.upsert({
+      where: {
+        code: positionDefinition.code,
+      },
+      update: {
+        name: positionDefinition.name,
+        description: positionDefinition.description,
+        isActive: true,
+      },
+      create: {
+        ...positionDefinition,
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+  }
+
+  const administratorPosition = defaultPositions.ADMIN_SYSTEME;
+  const standardUserPosition = defaultPositions.ASSISTANT_ADMINISTRATIF;
+
   const administratorRole = await prisma.role.upsert({
     where: {
       name: 'ADMINISTRATEUR',
@@ -184,6 +247,7 @@ async function main() {
     update: {
       email: adminEmail,
       departmentId: department.id,
+      positionId: administratorPosition.id,
       isActive: true,
     },
     create: {
@@ -191,7 +255,7 @@ async function main() {
       firstName: 'Administrateur',
       lastName: 'Système',
       email: adminEmail,
-      jobTitle: 'Administrateur',
+      positionId: administratorPosition.id,
       departmentId: department.id,
       isActive: true,
     },
@@ -204,6 +268,7 @@ async function main() {
     update: {
       email: standardUserEmail,
       departmentId: department.id,
+      positionId: standardUserPosition.id,
       isActive: true,
     },
     create: {
@@ -211,7 +276,7 @@ async function main() {
       firstName: 'Utilisateur',
       lastName: 'Standard',
       email: standardUserEmail,
-      jobTitle: 'Utilisateur',
+      positionId: standardUserPosition.id,
       departmentId: department.id,
       isActive: true,
     },

@@ -9,7 +9,7 @@ Ce document décrit le contrôle d’accès du backend. Il complète le [guide g
 - **Role** : un ensemble de droits attribué à un ou plusieurs comptes.
 - **Permission** : une action précise autorisée par l’API, par exemple `projects.read` ou `users.create`.
 
-Le poste professionnel `Employee.jobTitle` n’accorde aucun accès. Les accès proviennent uniquement de `User.roleId`, puis des permissions associées à ce rôle.
+Le poste professionnel `Employee.position` n’accorde aucun accès. Les accès proviennent uniquement de `User.roleId`, puis des permissions associées à ce rôle.
 
 ## 2. Fonctionnement d’une requête protégée
 

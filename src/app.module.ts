@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
 import { InternModule } from './intern/intern.module';
 import { PermissionModule } from './permission/permission.module';
 import { InternshipModule } from './internship/internship.module';
+import { PositionModule } from './position/position.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectAssignmentModule } from './project-assignment/project-assignment.module';
 import { ProjectModule } from './project/project.module';
@@ -27,6 +28,7 @@ import { UserModule } from './user/user.module';
     HealthModule,
     DepartmentModule,
     PermissionModule,
+    PositionModule,
     RoleModule,
     EmployeeModule,
     AuthModule,

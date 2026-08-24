@@ -114,6 +114,7 @@ Les routes `/auth/me` et `/auth/change-password` concernent le compte connecté.
 | Rôles            | `/roles`               | Permission `roles.read`               | Permissions de gestion du rôle                           |
 | Permissions      | `/permissions`         | Permission `permissions.read`         | Catalogue géré par les migrations                        |
 | Départements     | `/departments`         | Permission `departments.read`         | Permissions `create`, `update`, `deactivate`             |
+| Postes           | `/positions`           | Permission `positions.read`           | Permissions `create`, `update`, `deactivate`             |
 | Employés         | `/employees`           | Permission `employees.read`           | Permissions `create`, `update`, `deactivate`             |
 | Utilisateurs     | `/users`               | Permission `users.read`               | Permissions de gestion des comptes                       |
 | Encadreurs       | `/supervisors`         | Permission `supervisors.read`         | Permissions `create`, `update`, `deactivate`             |
@@ -207,6 +208,32 @@ Un département peut être lié à des employés, autorités, stages et projets.
 - le nom et le code ne peuvent pas être dupliqués ;
 - un département inactif ne peut pas être utilisé pour créer un nouvel employé, stage ou projet.
 
+### 6.3.1 Postes — `/positions`
+
+**Rôle du domaine**
+
+Maintenir un catalogue unique des fonctions professionnelles attribuables aux employés. Le poste décrit le métier dans l’entreprise et ne doit pas être confondu avec le rôle applicatif.
+
+**Données principales**
+
+- code unique, normalisé en majuscules ;
+- nom unique ;
+- description facultative ;
+- état actif/inactif ;
+- nombre d’employés actifs qui utilisent le poste.
+
+**Actions et règles**
+
+- `GET /positions` et `GET /positions/:id` consultent le catalogue ;
+- `POST /positions` ajoute un poste ;
+- `PATCH /positions/:id` modifie ou réactive un poste ;
+- `DELETE /positions/:id` effectue une désactivation logique ;
+- un poste utilisé par un employé actif ne peut pas être désactivé ;
+- seuls les postes actifs peuvent être choisis lors de la création ou modification d’un employé ;
+- l’administrateur possède les droits de gestion, tandis que les autres rôles initiaux possèdent uniquement `positions.read`.
+
+La migration initialise les postes Développeur backend, Développeur frontend, Administrateur système, Responsable RH, Chef de projet, Responsable réseau et Assistant administratif. Les anciens intitulés présents dans `employees.job_title` sont importés automatiquement avant la suppression de cette ancienne colonne.
+
 ### 6.4 Employés — `/employees`
 
 **Rôle du domaine**
@@ -219,7 +246,7 @@ Conserver la fiche professionnelle d’un membre du personnel de l’entreprise.
 - prénom et nom ;
 - email professionnel unique ;
 - téléphone ;
-- intitulé du poste (`jobTitle`) ;
+- poste actif sélectionné dans le catalogue (`positionId`) ;
 - département ;
 - état actif/inactif.
 
@@ -227,6 +254,7 @@ Conserver la fiche professionnelle d’un membre du personnel de l’entreprise.
 
 - toutes les routes sont réservées aux administrateurs ;
 - le département choisi doit être actif ;
+- le poste choisi doit être actif ;
 - le matricule et l’email sont uniques ;
 - la liste générale retourne les employés actifs ;
 - la suppression désactive l’employé sans effacer son historique.
@@ -551,7 +579,7 @@ Exemple : Moussa peut être employé du département informatique, avoir un comp
 
 ### 7.2 Poste professionnel et rôle applicatif
 
-- `Employee.jobTitle` décrit le **métier dans l’entreprise**, par exemple « Responsable RH » ou « Développeur ».
+- `Employee.position` décrit le **métier dans l’entreprise**, par exemple « Responsable RH » ou « Développeur backend ».
 - `User.role` regroupe les **droits dans l’application**. Les rôles initiaux sont `ADMINISTRATEUR`, `RH`, `ENCADREUR`, `DIRECTION` et `UTILISATEUR`.
 
 Un responsable RH n’est donc pas automatiquement administrateur de l’application.

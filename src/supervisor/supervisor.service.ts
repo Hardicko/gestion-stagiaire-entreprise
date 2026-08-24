@@ -51,6 +51,7 @@ export class SupervisorService {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },
@@ -66,6 +67,7 @@ export class SupervisorService {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },
@@ -86,6 +88,7 @@ export class SupervisorService {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },
@@ -136,6 +139,7 @@ export class SupervisorService {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },
@@ -176,6 +180,7 @@ export class SupervisorService {
         employee: {
           include: {
             department: true,
+            position: true,
           },
         },
       },

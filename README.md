@@ -59,6 +59,7 @@ Le tableau de bord utilise les événements réussis de ce journal pour fournir 
 | Rôles                   | `/roles`               |
 | Permissions             | `/permissions`         |
 | Départements            | `/departments`         |
+| Postes                  | `/positions`           |
 | Employés                | `/employees`           |
 | Stagiaires              | `/interns`             |
 | Encadreurs              | `/supervisors`         |

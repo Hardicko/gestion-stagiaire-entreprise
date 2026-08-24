@@ -60,7 +60,13 @@ export class AuthService {
             firstName: true,
             lastName: true,
             email: true,
-            jobTitle: true,
+            position: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+              },
+            },
             department: {
               select: {
                 id: true,
@@ -147,7 +153,8 @@ export class AuthService {
         firstName: user.employee.firstName,
         lastName: user.employee.lastName,
         email: user.employee.email,
-        jobTitle: user.employee.jobTitle,
+        jobTitle: user.employee.position.name,
+        position: user.employee.position,
         department: user.employee.department,
         role: user.role.name,
         permissions: user.role.rolePermissions.map(
@@ -308,7 +315,13 @@ export class AuthService {
             lastName: true,
             email: true,
             phone: true,
-            jobTitle: true,
+            position: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+              },
+            },
             department: {
               select: {
                 id: true,
@@ -353,7 +366,8 @@ export class AuthService {
       lastName: user.employee.lastName,
       email: user.employee.email,
       phone: user.employee.phone,
-      jobTitle: user.employee.jobTitle,
+      jobTitle: user.employee.position.name,
+      position: user.employee.position,
       department: user.employee.department,
       role: user.role.name,
       permissions: user.role.rolePermissions.map(

@@ -27,6 +27,21 @@ export class EmployeeService {
     }
   }
 
+  private async verifyPosition(positionId: string): Promise<void> {
+    const position = await this.prisma.position.findFirst({
+      where: {
+        id: positionId,
+        isActive: true,
+      },
+    });
+
+    if (!position) {
+      throw new NotFoundException(
+        'Le poste indiqué est introuvable ou inactif.',
+      );
+    }
+  }
+
   async create(createEmployeeDto: CreateEmployeeDto) {
     const employeeNumber = createEmployeeDto.employeeNumber
       .trim()
@@ -38,9 +53,9 @@ export class EmployeeService {
     const email = createEmployeeDto.email.trim().toLowerCase();
 
     const phone = createEmployeeDto.phone?.trim() || null;
-    const jobTitle = createEmployeeDto.jobTitle.trim();
 
     await this.verifyDepartment(createEmployeeDto.departmentId);
+    await this.verifyPosition(createEmployeeDto.positionId);
 
     const existingEmployee = await this.prisma.employee.findFirst({
       where: {
@@ -61,12 +76,13 @@ export class EmployeeService {
         lastName,
         email,
         phone,
-        jobTitle,
+        positionId: createEmployeeDto.positionId,
         departmentId: createEmployeeDto.departmentId,
         isActive: createEmployeeDto.isActive ?? true,
       },
       include: {
         department: true,
+        position: true,
       },
     });
   }
@@ -78,6 +94,7 @@ export class EmployeeService {
       },
       include: {
         department: true,
+        position: true,
       },
       orderBy: [
         {
@@ -97,6 +114,7 @@ export class EmployeeService {
       },
       include: {
         department: true,
+        position: true,
       },
     });
 
@@ -114,6 +132,10 @@ export class EmployeeService {
       await this.verifyDepartment(updateEmployeeDto.departmentId);
     }
 
+    if (updateEmployeeDto.positionId !== undefined) {
+      await this.verifyPosition(updateEmployeeDto.positionId);
+    }
+
     const employeeNumber = updateEmployeeDto.employeeNumber
       ?.trim()
       .toUpperCase();
@@ -128,8 +150,6 @@ export class EmployeeService {
       updateEmployeeDto.phone !== undefined
         ? updateEmployeeDto.phone.trim() || null
         : undefined;
-
-    const jobTitle = updateEmployeeDto.jobTitle?.trim();
 
     if (employeeNumber !== undefined || email !== undefined) {
       const existingEmployee = await this.prisma.employee.findFirst({
@@ -176,8 +196,8 @@ export class EmployeeService {
           phone,
         }),
 
-        ...(jobTitle !== undefined && {
-          jobTitle,
+        ...(updateEmployeeDto.positionId !== undefined && {
+          positionId: updateEmployeeDto.positionId,
         }),
 
         ...(updateEmployeeDto.departmentId !== undefined && {
@@ -190,6 +210,7 @@ export class EmployeeService {
       },
       include: {
         department: true,
+        position: true,
       },
     });
   }
@@ -212,6 +233,7 @@ export class EmployeeService {
         },
         include: {
           department: true,
+          position: true,
         },
       }),
       this.prisma.authSession.updateMany({

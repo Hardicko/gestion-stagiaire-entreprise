@@ -6,6 +6,11 @@ export const PERMISSIONS = {
   DEPARTMENTS_UPDATE: 'departments.update',
   DEPARTMENTS_DEACTIVATE: 'departments.deactivate',
 
+  POSITIONS_READ: 'positions.read',
+  POSITIONS_CREATE: 'positions.create',
+  POSITIONS_UPDATE: 'positions.update',
+  POSITIONS_DEACTIVATE: 'positions.deactivate',
+
   EMPLOYEES_READ: 'employees.read',
   EMPLOYEES_CREATE: 'employees.create',
   EMPLOYEES_UPDATE: 'employees.update',
@@ -128,6 +133,12 @@ export const PERMISSION_CATALOG: readonly PermissionDefinition[] = [
     update: PERMISSIONS.DEPARTMENTS_UPDATE,
     deactivate: PERMISSIONS.DEPARTMENTS_DEACTIVATE,
   }),
+  ...crudPermissions('positions', 'les postes', {
+    read: PERMISSIONS.POSITIONS_READ,
+    create: PERMISSIONS.POSITIONS_CREATE,
+    update: PERMISSIONS.POSITIONS_UPDATE,
+    deactivate: PERMISSIONS.POSITIONS_DEACTIVATE,
+  }),
   ...crudPermissions('employees', 'les employés', {
     read: PERMISSIONS.EMPLOYEES_READ,
     create: PERMISSIONS.EMPLOYEES_CREATE,
@@ -211,6 +222,7 @@ export const PERMISSION_CATALOG: readonly PermissionDefinition[] = [
 const STANDARD_READ_PERMISSIONS: readonly PermissionCode[] = [
   PERMISSIONS.DASHBOARD_READ,
   PERMISSIONS.DEPARTMENTS_READ,
+  PERMISSIONS.POSITIONS_READ,
   PERMISSIONS.INTERNS_READ,
   PERMISSIONS.SUPERVISORS_READ,
   PERMISSIONS.AUTHORITIES_READ,

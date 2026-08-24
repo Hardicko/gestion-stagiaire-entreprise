@@ -63,12 +63,25 @@ La connexion retourne notamment :
     "firstName": "Awa",
     "lastName": "Traoré",
     "email": "awa@entreprise.ml",
+    "jobTitle": "Développeur backend",
+    "position": {
+      "id": "UUID_DU_POSTE",
+      "code": "DEV_BACKEND",
+      "name": "Développeur backend"
+    },
+    "department": {
+      "id": "UUID_DU_DEPARTEMENT",
+      "code": "DSI",
+      "name": "Direction des systèmes d’information"
+    },
     "role": "ADMINISTRATEUR",
     "permissions": ["dashboard.read"],
     "mustChangePassword": false
   }
 }
 ```
+
+`jobTitle` est conservé dans les réponses Auth pour la compatibilité avec les premiers écrans frontend ; sa valeur est calculée depuis `position.name`. Les nouveaux écrans doivent utiliser l’objet `position`.
 
 Si `mustChangePassword=true`, rediriger vers `/changer-mot-de-passe`. Après un changement réussi, supprimer l’état local et retourner à la connexion.
 
@@ -123,6 +136,50 @@ Le code est converti en majuscules. Le nom et le code sont uniques.
 
 Permissions : `departments.read`, `departments.create`, `departments.update`, `departments.deactivate`.
 
+### Postes
+
+Base : `/positions`.
+
+Cette page administre le catalogue des fonctions professionnelles disponibles dans l’entreprise.
+
+Routes :
+
+| Méthode | Endpoint         | Utilisation                                    |
+| ------- | ---------------- | ---------------------------------------------- |
+| GET     | `/positions`     | Liste les postes actifs par ordre alphabétique |
+| GET     | `/positions/:id` | Consulte un poste                              |
+| POST    | `/positions`     | Ajoute un poste                                |
+| PATCH   | `/positions/:id` | Modifie ou réactive un poste                   |
+| DELETE  | `/positions/:id` | Désactive un poste                             |
+
+Corps de création :
+
+```json
+{
+  "code": "DEV_MOBILE",
+  "name": "Développeur mobile",
+  "description": "Développement des applications mobiles"
+}
+```
+
+Le code est normalisé en majuscules. Le code et le nom sont uniques. Chaque réponse contient `_count.employees`, qui représente le nombre d’employés actifs affectés au poste.
+
+Un poste ne peut pas être désactivé tant qu’il est attribué à au moins un employé actif. Le frontend doit demander une confirmation avant `DELETE` et afficher le message métier retourné en cas de conflit `409`.
+
+Les postes créés initialement par la migration sont :
+
+- Développeur backend ;
+- Développeur frontend ;
+- Administrateur système ;
+- Responsable RH ;
+- Chef de projet ;
+- Responsable réseau ;
+- Assistant administratif.
+
+Pour le formulaire employé, charger `GET /positions`, afficher `name` dans une liste déroulante et envoyer la valeur `id` dans `positionId`.
+
+Permissions : `positions.read`, `positions.create`, `positions.update`, `positions.deactivate`.
+
 ### Employés
 
 Base : `/employees`.
@@ -134,12 +191,12 @@ Base : `/employees`.
   "lastName": "Traoré",
   "email": "moussa@entreprise.ml",
   "phone": "+22370000000",
-  "jobTitle": "Développeur",
+  "positionId": "UUID_DU_POSTE",
   "departmentId": "UUID"
 }
 ```
 
-La réponse inclut `department`. La désactivation d’un employé révoque immédiatement les sessions de son éventuel compte utilisateur.
+Le poste et le département sélectionnés doivent être actifs. La réponse inclut les objets `position` et `department`. La désactivation d’un employé révoque immédiatement les sessions de son éventuel compte utilisateur.
 
 Permissions : `employees.read`, `employees.create`, `employees.update`, `employees.deactivate`.
 

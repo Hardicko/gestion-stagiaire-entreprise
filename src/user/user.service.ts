@@ -30,7 +30,13 @@ export class UserService {
         firstName: true,
         lastName: true,
         email: true,
-        jobTitle: true,
+        position: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
         isActive: true,
         department: {
           select: {

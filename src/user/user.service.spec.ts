@@ -71,7 +71,11 @@ describe('UserService', () => {
       firstName: 'Awa',
       lastName: 'Traoré',
       email: 'awa@example.com',
-      jobTitle: 'Assistante',
+      position: {
+        id: 'position-id',
+        code: 'ASSISTANT_ADMINISTRATIF',
+        name: 'Assistante administrative',
+      },
       isActive: true,
       department: {
         id: '66666666-6666-4666-8666-666666666666',
