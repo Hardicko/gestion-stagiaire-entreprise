@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
@@ -8,7 +9,6 @@ import { CreateProjectDto } from './create-project.dto';
 
 describe('CreateProjectDto', () => {
   const validPayload = {
-    projectCode: 'PRJ-001',
     name: 'Portail de gestion des stages',
     description: 'Application interne',
     gitlabLink: 'https://gitlab.example.com/entreprise/gestion-stages',
@@ -32,6 +32,27 @@ describe('CreateProjectDto', () => {
     });
 
     await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
+  it('refuse un code projet fourni par le client', async () => {
+    const pipe = new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    });
+
+    await expect(
+      pipe.transform(
+        {
+          ...validPayload,
+          projectCode: 'PRJ-MANUEL',
+        },
+        {
+          type: 'body',
+          metatype: CreateProjectDto,
+        },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('refuse un lien GitLab sans URL valide', async () => {

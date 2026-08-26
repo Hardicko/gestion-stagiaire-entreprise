@@ -48,7 +48,6 @@ export class ProjectService {
   }
 
   async create(createProjectDto: CreateProjectDto) {
-    const projectCode = createProjectDto.projectCode.trim().toUpperCase();
     const startDate = this.parseDate(
       createProjectDto.startDate,
       'La date de début',
@@ -58,32 +57,78 @@ export class ProjectService {
     this.validateDateRange(startDate, endDate);
     await this.verifyDepartment(createProjectDto.departmentId);
 
-    const existingProject = await this.prisma.project.findUnique({
-      where: {
-        projectCode,
-      },
-    });
+    for (
+      let transactionAttempt = 0;
+      transactionAttempt < 3;
+      transactionAttempt++
+    ) {
+      try {
+        return await this.prisma.$transaction(async (transaction) => {
+          const year = new Date().getUTCFullYear();
 
-    if (existingProject) {
-      throw new ConflictException('Ce code projet existe déjà.');
+          for (let skippedCodes = 0; skippedCodes < 1000; skippedCodes++) {
+            const sequence = await transaction.projectCodeSequence.upsert({
+              where: { year },
+              create: {
+                year,
+                lastValue: 1,
+              },
+              update: {
+                lastValue: {
+                  increment: 1,
+                },
+              },
+            });
+            const projectCode = `PRJ-${year}-${String(
+              sequence.lastValue,
+            ).padStart(4, '0')}`;
+            const existingProject = await transaction.project.findUnique({
+              where: { projectCode },
+              select: { id: true },
+            });
+
+            if (existingProject) {
+              continue;
+            }
+
+            return transaction.project.create({
+              data: {
+                projectCode,
+                name: createProjectDto.name.trim(),
+                description: createProjectDto.description?.trim() || null,
+                gitlabLink: createProjectDto.gitlabLink?.trim() || null,
+                startDate,
+                endDate,
+                status: createProjectDto.status ?? ProjectStatus.PLANNED,
+                departmentId: createProjectDto.departmentId,
+                isActive: createProjectDto.isActive ?? true,
+              },
+              include: {
+                department: true,
+              },
+            });
+          }
+
+          throw new ConflictException(
+            'Impossible de réserver un code projet disponible.',
+          );
+        });
+      } catch (error) {
+        const isConcurrentCodeCollision =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 'P2002';
+
+        if (!isConcurrentCodeCollision || transactionAttempt === 2) {
+          throw error;
+        }
+      }
     }
 
-    return this.prisma.project.create({
-      data: {
-        projectCode,
-        name: createProjectDto.name.trim(),
-        description: createProjectDto.description?.trim() || null,
-        gitlabLink: createProjectDto.gitlabLink?.trim() || null,
-        startDate,
-        endDate,
-        status: createProjectDto.status ?? ProjectStatus.PLANNED,
-        departmentId: createProjectDto.departmentId,
-        isActive: createProjectDto.isActive ?? true,
-      },
-      include: {
-        department: true,
-      },
-    });
+    throw new ConflictException(
+      'Impossible de réserver un code projet disponible.',
+    );
   }
 
   async findAll() {
@@ -137,7 +182,6 @@ export class ProjectService {
   async update(id: string, updateProjectDto: UpdateProjectDto) {
     const currentProject = await this.findOne(id);
 
-    const projectCode = updateProjectDto.projectCode?.trim().toUpperCase();
     const startDate =
       updateProjectDto.startDate !== undefined
         ? this.parseDate(updateProjectDto.startDate, 'La date de début')
@@ -163,21 +207,6 @@ export class ProjectService {
       await this.verifyDepartment(updateProjectDto.departmentId);
     }
 
-    if (projectCode !== undefined) {
-      const existingProject = await this.prisma.project.findFirst({
-        where: {
-          id: {
-            not: id,
-          },
-          projectCode,
-        },
-      });
-
-      if (existingProject) {
-        throw new ConflictException('Ce code projet existe déjà.');
-      }
-    }
-
     const description =
       updateProjectDto.description !== undefined
         ? updateProjectDto.description?.trim() || null
@@ -192,7 +221,6 @@ export class ProjectService {
         id,
       },
       data: {
-        ...(projectCode !== undefined && { projectCode }),
         ...(updateProjectDto.name !== undefined && {
           name: updateProjectDto.name.trim(),
         }),

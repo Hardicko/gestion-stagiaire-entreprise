@@ -269,9 +269,10 @@ Permissions : `internships.read`, `internships.create`, `internships.update`, `i
 
 Base : `/projects`.
 
+Corps de `POST /projects` :
+
 ```json
 {
-  "projectCode": "PRJ-001",
   "name": "Gestion des stagiaires",
   "description": "Application interne",
   "gitlabLink": "https://gitlab.entreprise.ml/projet",
@@ -281,6 +282,10 @@ Base : `/projects`.
   "departmentId": "UUID"
 }
 ```
+
+Le frontend n’envoie jamais `projectCode`. Le backend le génère au format `PRJ-AAAA-NNNN` avec un compteur annuel transactionnel, vérifie que le candidat est libre et passe au numéro suivant s’il existe déjà. La réponse `201` contient le code généré. Ce code reste visible mais ne peut jamais être modifié ; l’envoyer dans un POST ou un PATCH provoque une réponse `400`.
+
+La colonne `projects.project_code` reste protégée par une contrainte `UNIQUE`.
 
 Statuts : `PLANNED`, `ONGOING`, `COMPLETED`, `CANCELLED`, `ON_HOLD`. La liste inclut `_count.projectAssignments`.
 

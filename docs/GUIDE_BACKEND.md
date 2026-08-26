@@ -420,7 +420,7 @@ Représenter un projet de l’entreprise auquel un stage peut contribuer.
 
 **Données principales**
 
-- code projet unique ;
+- code projet unique, immuable et généré automatiquement au format `PRJ-AAAA-NNNN` ; un candidat déjà occupé est sauté ;
 - nom et description ;
 - lien GitLab facultatif et valide ;
 - dates de début et de fin ;

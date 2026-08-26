@@ -72,65 +72,65 @@ Une erreur de validation peut renvoyer `message` sous forme de tableau.
 
 `Public` signifie qu’aucun JWT n’est requis. `Session` signifie qu’une session valide suffit. Toutes les autres lignes indiquent la permission métier exacte.
 
-| Domaine | Méthode | Endpoint | Protection |
-|---|---|---|---|
-| Application | `GET` | `/` | Public |
-| Santé MySQL | `GET` | `/health/database` | Public |
-| Authentification | `POST` | `/auth/login` | Public |
-| Authentification | `POST` | `/auth/refresh` | Refresh token/cookie |
-| Authentification | `POST` | `/auth/logout` | Refresh token/cookie |
-| Profil | `GET` | `/auth/me` | Session |
-| Mot de passe | `PATCH` | `/auth/change-password` | Session |
-| Tableau de bord | `GET` | `/dashboard` | `dashboard.read` |
-| Départements | `GET` | `/departments`, `/departments/:id` | `departments.read` |
-| Départements | `POST` | `/departments` | `departments.create` |
-| Départements | `PATCH` | `/departments/:id` | `departments.update` |
-| Départements | `DELETE` | `/departments/:id` | `departments.deactivate` |
-| Postes | `GET` | `/positions`, `/positions/:id` | `positions.read` |
-| Postes | `POST` | `/positions` | `positions.create` |
-| Postes | `PATCH` | `/positions/:id` | `positions.update` |
-| Postes | `DELETE` | `/positions/:id` | `positions.deactivate` |
-| Employés | `GET` | `/employees`, `/employees/:id` | `employees.read` |
-| Employés | `POST` | `/employees` | `employees.create` |
-| Employés | `PATCH` | `/employees/:id` | `employees.update` |
-| Employés | `DELETE` | `/employees/:id` | `employees.deactivate` |
-| Utilisateurs | `GET` | `/users`, `/users/:id` | `users.read` |
-| Utilisateurs | `POST` | `/users` | `users.create` |
-| Utilisateurs | `PATCH` | `/users/:id` | `users.update` |
-| Utilisateurs | `PATCH` | `/users/:id/reset-password` | `users.reset-password` |
-| Utilisateurs | `DELETE` | `/users/:id` | `users.deactivate` |
-| Rôles | `GET` | `/roles`, `/roles/:id` | `roles.read` |
-| Rôles | `POST` | `/roles` | `roles.create` |
-| Rôles | `PATCH` | `/roles/:id` | `roles.update` |
-| Rôles | `PUT` | `/roles/:id/permissions` | `roles.permissions.manage` |
-| Rôles | `DELETE` | `/roles/:id` | `roles.deactivate` |
-| Permissions | `GET` | `/permissions`, `/permissions/:id` | `permissions.read` |
-| Stagiaires | `GET` | `/interns`, `/interns/:id` | `interns.read` |
-| Stagiaires | `POST` | `/interns` | `interns.create` |
-| Stagiaires | `PATCH` | `/interns/:id` | `interns.update` |
-| Stagiaires | `DELETE` | `/interns/:id` | `interns.deactivate` |
-| Encadreurs | `GET` | `/supervisors`, `/supervisors/:id` | `supervisors.read` |
-| Encadreurs | `POST` | `/supervisors` | `supervisors.create` |
-| Encadreurs | `PATCH` | `/supervisors/:id` | `supervisors.update` |
-| Encadreurs | `DELETE` | `/supervisors/:id` | `supervisors.deactivate` |
-| Autorités | `GET` | `/authorities`, `/authorities/:id` | `authorities.read` |
-| Autorités | `POST` | `/authorities` | `authorities.create` |
-| Autorités | `PATCH` | `/authorities/:id` | `authorities.update` |
-| Autorités | `DELETE` | `/authorities/:id` | `authorities.deactivate` |
-| Stages | `GET` | `/internships`, `/internships/:id` | `internships.read` |
-| Suivi des stages | `GET` | `/internships/tracking` | `internships.read` |
-| Stages | `POST` | `/internships` | `internships.create` |
-| Stages | `PATCH` | `/internships/:id` | `internships.update` |
-| Stages | `DELETE` | `/internships/:id` | `internships.deactivate` |
-| Projets | `GET` | `/projects`, `/projects/:id` | `projects.read` |
-| Projets | `POST` | `/projects` | `projects.create` |
-| Projets | `PATCH` | `/projects/:id` | `projects.update` |
-| Projets | `DELETE` | `/projects/:id` | `projects.deactivate` |
-| Affectations | `GET` | `/project-assignments`, `/project-assignments/:id` | `project-assignments.read` |
-| Affectations | `POST` | `/project-assignments` | `project-assignments.create` |
-| Affectations | `PATCH` | `/project-assignments/:id` | `project-assignments.update` |
-| Affectations | `DELETE` | `/project-assignments/:id` | `project-assignments.deactivate` |
-| Journal d’audit | `GET` | `/audit-logs`, `/audit-logs/:id` | `audit-logs.read` |
+| Domaine             | Méthode     | Endpoint                        | Protection              |
+|---------------------|-------------|---------------------------------|-------------------------|
+| Application         | `GET`       | `/`                             | Public                  |
+| Santé MySQL         | `GET`       | `/health/database`              | Public                  |
+| Authentification    | `POST`      | `/auth/login`                   | Public                  |
+| Authentification    | `POST`      | `/auth/refresh`                 | Refresh token/cookie    |
+| Authentification    | `POST`      | `/auth/logout`                  | Refresh token/cookie |
+| Profil              | `GET`       | `/auth/me`                      | Session |
+| Mot de passe        | `PATCH`     | `/auth/change-password`         | Session |
+| Tableau de bord     | `GET`       | `/dashboard`                    | `dashboard.read` |
+| Départements        | `GET`       | `/departments`, `/departments/:id` | `departments.read` |
+| Départements        | `POST`      | `/departments` | `departments.create` |
+| Départements        | `PATCH`     | `/departments/:id` | `departments.update` |
+| Départements        | `DELETE`    | `/departments/:id` | `departments.deactivate` |
+| Postes              | `GET`       | `/positions`, `/positions/:id` | `positions.read` |
+| Postes              | `POST`      | `/positions` | `positions.create` |
+| Postes              | `PATCH`     | `/positions/:id` | `positions.update` |
+| Postes              | `DELETE`    | `/positions/:id` | `positions.deactivate` |
+| Employés            | `GET`       | `/employees`, `/employees/:id` | `employees.read` |
+| Employés            | `POST`      | `/employees` | `employees.create` |
+| Employés            | `PATCH`     | `/employees/:id` | `employees.update` |
+| Employés            | `DELETE`    | `/employees/:id` | `employees.deactivate` |
+| Utilisateurs        | `GET`       | `/users`, `/users/:id` | `users.read` |
+| Utilisateurs        | `POST`      | `/users` | `users.create` |
+| Utilisateurs        | `PATCH`     | `/users/:id` | `users.update` |
+| Utilisateurs        | `PATCH`     | `/users/:id/reset-password` | `users.reset-password` |
+| Utilisateurs        | `DELETE`    | `/users/:id` | `users.deactivate` |
+| Rôles               | `GET`       | `/roles`, `/roles/:id` | `roles.read` |
+| Rôles               | `POST`      | `/roles` | `roles.create` |
+| Rôles               | `PATCH`     | `/roles/:id` | `roles.update` |
+| Rôles               | `PUT`       | `/roles/:id/permissions` | `roles.permissions.manage` |
+| Rôles               | `DELETE`    | `/roles/:id` | `roles.deactivate` |
+| Permissions         | `GET`       | `/permissions`, `/permissions/:id` | `permissions.read` |
+| Stagiaires          | `GET`       | `/interns`, `/interns/:id` | `interns.read` |
+| Stagiaires          | `POST`      | `/interns` | `interns.create` |
+| Stagiaires          | `PATCH`     | `/interns/:id` | `interns.update` |
+| Stagiaires          | `DELETE`    | `/interns/:id` | `interns.deactivate` |
+| Encadreurs          | `GET`       | `/supervisors`, `/supervisors/:id` | `supervisors.read` |
+| Encadreurs          | `POST`      | `/supervisors` | `supervisors.create` |
+| Encadreurs          | `PATCH`     | `/supervisors/:id` | `supervisors.update` |
+| Encadreurs          | `DELETE`    | `/supervisors/:id` | `supervisors.deactivate` |
+| Autorités           | `GET`       | `/authorities`, `/authorities/:id` | `authorities.read` |
+| Autorités           | `POST`      | `/authorities` | `authorities.create` |
+| Autorités           | `PATCH`     | `/authorities/:id` | `authorities.update` |
+| Autorités           | `DELETE`    | `/authorities/:id` | `authorities.deactivate` |
+| Stages              | `GET`       | `/internships`, `/internships/:id`                 | `internships.read` |
+| Suivi des stages    | `GET`       | `/internships/tracking`                            | `internships.read` |
+| Stages              | `POST`      | `/internships`                                     | `internships.create` |
+| Stages              | `PATCH`     | `/internships/:id`                                 | `internships.update` |
+| Stages              | `DELETE`    | `/internships/:id`                                 | `internships.deactivate` |
+| Projets             | `GET`       | `/projects`, `/projects/:id`                       | `projects.read` |
+| Projets             | `POST`      | `/projects`                                        | `projects.create` |
+| Projets             | `PATCH`     | `/projects/:id`                                    | `projects.update` |
+| Projets             | `DELETE`    | `/projects/:id`                                    | `projects.deactivate` |
+| Affectations        | `GET`       | `/project-assignments`, `/project-assignments/:id` | `project-assignments.read` |
+| Affectations        | `POST`      | `/project-assignments`            | `project-assignments.create` |
+| Affectations        | `PATCH`     | `/project-assignments/:id`        | `project-assignments.update` |
+| Affectations        | `DELETE`    | `/project-assignments/:id`        | `project-assignments.deactivate` |
+| Journal d’audit     | `GET`       | `/audit-logs`, `/audit-logs/:id`  | `audit-logs.read` |
 
 ## 3. Ordre métier conseillé au frontend
 
@@ -271,11 +271,11 @@ const response = await api.get<Department>(
 
 const department = response.data;
 8. Validation des champs
-Champ	Obligatoire	Validation
-name	Oui à la création	Texte, maximum 150 caractères
-code	Oui à la création	Texte, maximum 20 caractères
-description	Non	Texte
-isActive	Non	Booléen
+Champ	        Obligatoire	              Validation
+name	        Oui à la création	Texte,  maximum 150 caractères
+code	        Oui à la création	Texte,  maximum 20 caractères
+description	  Non	                      Texte
+isActive	    Non	                      Booléen
 
 
 Le backend :
@@ -310,10 +310,10 @@ JWT expiré
 Le frontend appelle alors /auth/refresh, récupère un nouveau JWT et rejoue la requête.
 10. Permissions de l’utilisateur
 Le frontend reçoit les permissions pendant la connexion. Il doit adapter les boutons :
-Permission	Élément visible
-departments.read	Page et liste des départements
-departments.create	Bouton « Ajouter »
-departments.update	Bouton « Modifier »
+Permission	            Élément visible
+departments.read	      Page et liste des départements
+departments.create	    Bouton « Ajouter »
+departments.update	    Bouton « Modifier »
 departments.deactivate	Bouton « Désactiver »
 
 
@@ -348,15 +348,15 @@ La page « Postes » gère le catalogue des fonctions professionnelles de l’en
 
 La migration et le seed préparent les postes suivants :
 
-| Code | Nom |
-|---|---|
-| DEV_BACKEND | Développeur backend |
-| DEV_FRONTEND | Développeur frontend |
-| ADMIN_SYSTEME | Administrateur système |
-| RESPONSABLE_RH | Responsable RH |
-| CHEF_PROJET | Chef de projet |
-| RESPONSABLE_RESEAU | Responsable réseau |
-| ASSISTANT_ADMINISTRATIF | Assistant administratif |
+| Code                    | Nom                       |
+|-------------------------|---------------------------|
+| DEV_BACKEND             | Développeur backend       |
+| DEV_FRONTEND            | Développeur frontend      |
+| ADMIN_SYSTEME           | Administrateur système    |
+| RESPONSABLE_RH          | Responsable RH            |
+| CHEF_PROJET             | Chef de projet            |
+| RESPONSABLE_RESEAU      | Responsable réseau        |
+| ASSISTANT_ADMINISTRATIF | Assistant administratif   |
 
 L’administrateur peut ensuite ajouter, modifier ou désactiver d’autres postes.
 
@@ -2816,9 +2816,12 @@ La liste ne contient que les projets actifs, elle est triée par date de début 
 
 ### Création
 
+Dans le formulaire de création, afficher un champ désactivé contenant « Généré automatiquement ». Le frontend ne doit jamais envoyer `projectCode` : le backend réserve le prochain numéro annuel et crée le projet dans une même transaction.
+
+Corps de `POST /projects` :
+
 ~~~json
 {
-  "projectCode": "PRJ-PORTAIL-001",
   "name": "Portail interne",
   "description": "Développement du portail de l’entreprise",
   "gitlabLink": "https://gitlab.example.com/equipe/portail",
@@ -2831,7 +2834,7 @@ La liste ne contient que les projets actifs, elle est triée par date de début 
 
 | Champ | Création | Validation |
 |---|---|---|
-| projectCode | Obligatoire | Maximum 30 caractères, normalisé en majuscules, unique |
+| projectCode | Ne pas envoyer | Généré par le backend au format `PRJ-AAAA-NNNN`, unique et immuable |
 | name | Obligatoire | Maximum 200 caractères |
 | description | Facultatif | Texte ou null |
 | gitlabLink | Facultatif | URL complète HTTP/HTTPS, maximum 500 caractères, ou null |
@@ -2840,6 +2843,25 @@ La liste ne contient que les projets actifs, elle est triée par date de début 
 | status | Facultatif | PLANNED par défaut |
 | departmentId | Obligatoire | UUID d’un département actif |
 | isActive | Facultatif | true par défaut |
+
+Une création réussie renvoie immédiatement le projet avec son vrai code :
+
+~~~json
+{
+  "id": "uuid-projet",
+  "projectCode": "PRJ-2026-0001",
+  "name": "Portail interne",
+  "status": "PLANNED",
+  "departmentId": "uuid-departement",
+  "department": {
+    "id": "uuid-departement",
+    "code": "DSI",
+    "name": "Direction des systèmes d’information"
+  }
+}
+~~~
+
+L’année utilisée est l’année UTC de création sur le serveur. Le compteur repart à `0001` chaque nouvelle année. Avant l’insertion, le backend vérifie que le code candidat n’existe pas ; s’il est déjà occupé, il incrémente le compteur et essaie le suivant. Les anciens codes conformes sont aussi pris en compte par la migration. La contrainte `UNIQUE` reste la dernière protection contre une collision simultanée.
 
 ### Modification, statuts et désactivation
 
@@ -2851,6 +2873,8 @@ PATCH envoie uniquement les champs modifiés :
   "gitlabLink": "https://gitlab.example.com/equipe/portail"
 }
 ~~~
+
+Le code reste affiché dans les détails et le formulaire de modification, mais dans un champ non modifiable. Il ne doit pas apparaître dans le corps du PATCH. Si le frontend envoie `projectCode`, l’API répond `400 Bad Request` car ce champ n’appartient plus aux DTO de création ou de modification.
 
 Un projet ONGOING doit d’abord devenir COMPLETED ou CANCELLED avant sa désactivation. Le backend refuse également la désactivation tant que des affectations ASSIGNED ou IN_PROGRESS existent.
 

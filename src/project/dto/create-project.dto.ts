@@ -15,11 +15,6 @@ import { ProjectStatus } from '../../generated/prisma/enums';
 export class CreateProjectDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(30)
-  projectCode!: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MaxLength(200)
   name!: string;
 

@@ -335,6 +335,15 @@ model Project {
   @@map("projects")
 }
 
+model ProjectCodeSequence {
+  year      Int      @id
+  lastValue Int      @default(0) @map("last_value")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("project_code_sequences")
+}
+
 model ProjectAssignment {
   id           String           @id @default(uuid()) @db.Char(36)
   internshipId String           @map("internship_id") @db.Char(36)

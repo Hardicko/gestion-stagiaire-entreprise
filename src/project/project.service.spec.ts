@@ -21,7 +21,6 @@ describe('ProjectService', () => {
   };
   const projectRepository = {
     findUnique: jest.fn(),
-    findFirst: jest.fn(),
     create: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
@@ -29,17 +28,28 @@ describe('ProjectService', () => {
   const projectAssignmentRepository = {
     count: jest.fn(),
   };
-
-  const prisma = {
+  const projectCodeSequenceRepository = {
+    upsert: jest.fn(),
+  };
+  const transaction = {
+    project: projectRepository,
+    projectCodeSequence: projectCodeSequenceRepository,
+  };
+  const prismaClient = {
     department: departmentRepository,
     project: projectRepository,
     projectAssignment: projectAssignmentRepository,
-  } as unknown as PrismaService;
+    $transaction: jest.fn(
+      (callback: (client: typeof transaction) => Promise<unknown>) =>
+        callback(transaction),
+    ),
+  };
+
+  const prisma = prismaClient as unknown as PrismaService;
 
   let service: ProjectService;
 
   const validDto: CreateProjectDto = {
-    projectCode: ' prj-001 ',
     name: ' Portail de gestion ',
     description: ' Application interne ',
     gitlabLink: ' https://gitlab.example.com/entreprise/portail ',
@@ -50,7 +60,13 @@ describe('ProjectService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-08-26T12:00:00.000Z'));
     service = new ProjectService(prisma);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('crée et normalise un projet', async () => {
@@ -58,14 +74,34 @@ describe('ProjectService', () => {
       id: 'department-id',
     });
     projectRepository.findUnique.mockResolvedValue(null);
-    projectRepository.create.mockResolvedValue({ id: 'project-id' });
+    projectCodeSequenceRepository.upsert.mockResolvedValue({
+      year: 2026,
+      lastValue: 1,
+    });
+    projectRepository.create.mockResolvedValue({
+      id: 'project-id',
+      projectCode: 'PRJ-2026-0001',
+    });
 
     await expect(service.create(validDto)).resolves.toEqual({
       id: 'project-id',
+      projectCode: 'PRJ-2026-0001',
+    });
+    expect(projectCodeSequenceRepository.upsert).toHaveBeenCalledWith({
+      where: { year: 2026 },
+      create: {
+        year: 2026,
+        lastValue: 1,
+      },
+      update: {
+        lastValue: {
+          increment: 1,
+        },
+      },
     });
     expect(projectRepository.create).toHaveBeenCalledWith({
       data: {
-        projectCode: 'PRJ-001',
+        projectCode: 'PRJ-2026-0001',
         name: 'Portail de gestion',
         description: 'Application interne',
         gitlabLink: 'https://gitlab.example.com/entreprise/portail',
@@ -102,18 +138,107 @@ describe('ProjectService', () => {
     expect(projectRepository.create).not.toHaveBeenCalled();
   });
 
-  it('refuse un code projet déjà utilisé', async () => {
+  it('complète le numéro du compteur annuel avec des zéros', async () => {
     departmentRepository.findFirst.mockResolvedValue({
       id: 'department-id',
     });
-    projectRepository.findUnique.mockResolvedValue({
-      id: 'existing-project',
+    projectRepository.findUnique.mockResolvedValue(null);
+    projectCodeSequenceRepository.upsert.mockResolvedValue({
+      year: 2026,
+      lastValue: 27,
     });
+    projectRepository.create.mockResolvedValue({ id: 'project-id' });
 
-    await expect(service.create(validDto)).rejects.toBeInstanceOf(
-      ConflictException,
+    await service.create(validDto);
+
+    expect(projectRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectCode: 'PRJ-2026-0027',
+        }),
+      }),
     );
-    expect(projectRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('saute un code déjà présent et utilise le numéro suivant', async () => {
+    departmentRepository.findFirst.mockResolvedValue({
+      id: 'department-id',
+    });
+    projectCodeSequenceRepository.upsert
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 1,
+      })
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 2,
+      });
+    projectRepository.findUnique
+      .mockResolvedValueOnce({ id: 'existing-project' })
+      .mockResolvedValueOnce(null);
+    projectRepository.create.mockResolvedValue({ id: 'project-id' });
+
+    await service.create(validDto);
+
+    expect(projectRepository.findUnique).toHaveBeenNthCalledWith(1, {
+      where: { projectCode: 'PRJ-2026-0001' },
+      select: { id: true },
+    });
+    expect(projectRepository.findUnique).toHaveBeenNthCalledWith(2, {
+      where: { projectCode: 'PRJ-2026-0002' },
+      select: { id: true },
+    });
+    expect(projectRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ projectCode: 'PRJ-2026-0002' }),
+      }),
+    );
+  });
+
+  it('réessaie avec le numéro suivant après une collision simultanée', async () => {
+    departmentRepository.findFirst.mockResolvedValue({
+      id: 'department-id',
+    });
+    projectCodeSequenceRepository.upsert
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 1,
+      })
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 1,
+      })
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 2,
+      });
+    projectRepository.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'concurrent-project' })
+      .mockResolvedValueOnce(null);
+    projectRepository.create
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Unique constraint failed'), {
+          code: 'P2002',
+        }),
+      )
+      .mockResolvedValueOnce({
+        id: 'project-id',
+        projectCode: 'PRJ-2026-0002',
+      });
+
+    await expect(service.create(validDto)).resolves.toEqual({
+      id: 'project-id',
+      projectCode: 'PRJ-2026-0002',
+    });
+    expect(prismaClient.$transaction).toHaveBeenCalledTimes(2);
+    expect(projectRepository.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          projectCode: 'PRJ-2026-0002',
+        }),
+      }),
+    );
   });
 
   it('retourne les projets actifs avec le nombre d’affectations', async () => {
