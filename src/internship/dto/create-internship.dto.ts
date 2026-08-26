@@ -20,11 +20,6 @@ import { InternshipStatus, InternshipType } from '../../generated/prisma/enums';
 export class CreateInternshipDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(30)
-  referenceCode!: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MaxLength(200)
   title!: string;
 

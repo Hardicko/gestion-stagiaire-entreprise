@@ -1961,7 +1961,7 @@ export interface DashboardActivity {
   "recentInterns": [
     {
       "id": "uuid-stagiaire",
-      "registrationCode": "STG-2026-001",
+      "registrationCode": "STG-2026-0001",
       "firstName": "Amadou",
       "lastName": "Diallo",
       "fullName": "Amadou Diallo",
@@ -2170,7 +2170,7 @@ Réponse :
 [
   {
     "id": "6f555fea-e23a-4639-94f2-d2e68c98f354",
-    "registrationCode": "STG-2026-001",
+    "registrationCode": "STG-2026-0001",
     "firstName": "Amadou",
     "lastName": "Diallo",
     "dateOfBirth": "2002-06-15T00:00:00.000Z",
@@ -2198,8 +2198,10 @@ La liste :
 POST /interns
 Authorization: Bearer JWT
 Content-Type: application/json
+
+Dans le formulaire, afficher « Généré automatiquement » dans un champ désactivé. Le frontend ne doit jamais envoyer `registrationCode`.
+
 {
-  "registrationCode": "STG-2026-001",
   "firstName": "Amadou",
   "lastName": "Diallo",
   "dateOfBirth": "2002-06-15",
@@ -2214,7 +2216,7 @@ Content-Type: application/json
   "emergencyContactName": "Mamadou Diallo",
   "emergencyContactPhone": "+22371000000"
 }
-Le backend renvoie directement le stagiaire créé.
+Le backend renvoie directement le stagiaire créé avec son code réel, par exemple `STG-2026-0001`. Il utilise l’année UTC, vérifie que le candidat est libre, saute tout numéro déjà occupé et conserve une contrainte `UNIQUE`.
 Après la création, le frontend peut proposer :
 Stagiaire créé avec succès.
 Voulez-vous maintenant créer son stage ?
@@ -2239,6 +2241,9 @@ Pour vider un champ facultatif, envoyez temporairement une chaîne vide :
 }
 Le backend transformera ces chaînes vides en null.
 Il vaut mieux ne pas envoyer null actuellement pendant une modification, car certains traitements utilisent directement .trim().
+
+Le code d’inscription reste visible dans le détail et le formulaire de modification, mais il est immuable. Ne jamais l’envoyer dans le PATCH ; sinon l’API répond `400 Bad Request`.
+
 7. Désactiver un stagiaire
 DELETE /interns/:id
 La désactivation est logique :
@@ -2246,10 +2251,10 @@ La désactivation est logique :
   "isActive": false
 }
 Le stagiaire disparaît ensuite de GET /interns.
-Limitation actuelle : le backend ne vérifie pas encore si le stagiaire possède un stage planifié ou en cours avant de le désactiver. Le frontend devrait afficher une confirmation forte, mais cette règle devra surtout être ajoutée au backend.
+Le backend refuse la désactivation si le stagiaire possède encore un stage planifié ou en cours.
 8. Validation
 Champ	Obligatoire	Validation
-registrationCode	Oui	Texte, maximum 30 caractères
+registrationCode	Ne pas envoyer	Généré au format STG-AAAA-NNNN, unique et immuable
 firstName	Oui	Texte, maximum 100 caractères
 lastName	Oui	Texte, maximum 100 caractères
 dateOfBirth	Oui	Date ISO, pas dans le futur
@@ -2267,16 +2272,16 @@ isActive	Non	Booléen, true par défaut
 
 
 Le backend :
-- transforme le code d’inscription en majuscules ;
+- génère le code d’inscription dans une transaction et saute les codes existants ;
 - transforme l’email en minuscules ;
 - retire les espaces inutiles ;
 - refuse une date de naissance future ;
-- refuse un matricule ou un email déjà utilisé.
+- refuse un email déjà utilisé.
 9. Erreurs possibles
-Matricule ou email déjà utilisé
+Email déjà utilisé
 {
   "statusCode": 409,
-  "message": "Un stagiaire avec ce matricule ou cet email existe déjà.",
+  "message": "Un stagiaire avec cet email existe déjà.",
   "error": "Conflict"
 }
 Date de naissance future
@@ -2401,7 +2406,7 @@ Réponse simplifiée :
 [
   {
     "id": "5a2744cc-3825-4391-8378-5b6ead4408c8",
-    "referenceCode": "STAGE-2026-001",
+    "referenceCode": "STAGE-2026-0001",
     "title": "Stage de développement backend",
     "description": "Développement des API",
     "startDate": "2026-08-01T00:00:00.000Z",
@@ -2421,7 +2426,7 @@ Réponse simplifiée :
     "updatedAt": "2026-08-23T10:00:00.000Z",
     "intern": {
       "id": "uuid-stagiaire",
-      "registrationCode": "STG-2026-001",
+      "registrationCode": "STG-2026-0001",
       "firstName": "Amadou",
       "lastName": "Diallo"
     },
@@ -2479,8 +2484,10 @@ Attention : il faut envoyer l’identifiant du profil Supervisor, pas l’identi
 POST /internships
 Authorization: Bearer JWT
 Content-Type: application/json
+
+Dans le formulaire, afficher « Générée automatiquement » dans un champ désactivé. Le frontend ne doit jamais envoyer `referenceCode`.
+
 {
-  "referenceCode": "STAGE-2026-001",
   "title": "Stage de développement backend",
   "description": "Développement des API",
   "startDate": "2026-08-01",
@@ -2508,6 +2515,9 @@ Champs facultatifs :
 - authorityId ;
 - grade ;
 - isActive, qui vaut true par défaut.
+
+La réponse contient la référence générée, par exemple `STAGE-2026-0001`. Le backend utilise l’année UTC, vérifie chaque candidate et passe au numéro suivant si elle existe déjà.
+
 6. Règle de chevauchement
 Un stagiaire ne peut pas avoir deux stages actifs qui se chevauchent.
 Exemple refusé :
@@ -2577,6 +2587,7 @@ Retirer l’autorité :
   "authorityId": null
 }
 Le backend contrôle de nouveau toutes les relations et les périodes.
+La référence reste visible mais non modifiable. Elle ne doit jamais être envoyée dans le PATCH ; un envoi manuel provoque `400 Bad Request`.
 11. Désactiver un stage
 DELETE /internships/:id
 Le backend refuse de désactiver un stage ayant le statut ONGOING.
@@ -2585,12 +2596,6 @@ Il faut d’abord le passer en :
 - ou CANCELLED.
 La réponse du DELETE ne contient pas les relations imbriquées. Après réussite, le frontend doit retirer la ligne ou recharger la liste.
 12. Erreurs principales
-Référence déjà utilisée
-{
-  "statusCode": 409,
-  "message": "Cette référence de stage existe déjà.",
-  "error": "Conflict"
-}
 Période invalide
 {
   "statusCode": 400,
@@ -2720,12 +2725,12 @@ export interface InternshipTrackingResponse {
   "items": [
     {
       "id": "uuid-stage",
-      "referenceCode": "STAGE-2026-001",
+      "referenceCode": "STAGE-2026-0001",
       "title": "Stage backend",
       "status": "ONGOING",
       "intern": {
         "id": "uuid-stagiaire",
-        "registrationCode": "STG-2026-001",
+        "registrationCode": "STG-2026-0001",
         "firstName": "Amadou",
         "lastName": "Diallo"
       },

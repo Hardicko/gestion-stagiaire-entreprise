@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
@@ -8,7 +9,6 @@ import { CreateInternDto } from './create-intern.dto';
 
 describe('CreateInternDto', () => {
   const validPayload = {
-    registrationCode: 'STG-001',
     firstName: 'Awa',
     lastName: 'Traoré',
     dateOfBirth: '2001-05-10',
@@ -25,6 +25,27 @@ describe('CreateInternDto', () => {
     const dto = plainToInstance(CreateInternDto, validPayload);
 
     await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
+  it('refuse un code d’inscription fourni par le client', async () => {
+    const pipe = new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    });
+
+    await expect(
+      pipe.transform(
+        {
+          ...validPayload,
+          registrationCode: 'STG-MANUEL',
+        },
+        {
+          type: 'body',
+          metatype: CreateInternDto,
+        },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('refuse les valeurs inconnues pour le genre et le niveau', async () => {

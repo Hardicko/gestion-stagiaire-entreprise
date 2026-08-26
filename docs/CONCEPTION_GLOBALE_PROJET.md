@@ -456,8 +456,9 @@ src/<domaine>/
   active ne peut pas toujours être désactivé immédiatement ;
 - les relations utilisées doivent exister et être actives ;
 - les références de stage, codes projet, matricules et e-mails sont uniques ;
-- les codes projet sont générés automatiquement et de manière transactionnelle
-  au format `PRJ-AAAA-NNNN`, puis restent immuables ;
+- les codes stagiaire, stage et projet sont générés automatiquement et de manière
+  transactionnelle aux formats `STG-AAAA-NNNN`, `STAGE-AAAA-NNNN` et
+  `PRJ-AAAA-NNNN`, puis restent immuables ;
 - les textes et e-mails sont normalisés avant enregistrement ;
 - les ressources historiques sont généralement désactivées au lieu d'être
   supprimées physiquement ;

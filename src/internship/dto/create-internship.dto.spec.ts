@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 
@@ -8,7 +9,6 @@ import { CreateInternshipDto } from './create-internship.dto';
 
 describe('CreateInternshipDto', () => {
   const validPayload = {
-    referenceCode: 'STAGE-001',
     title: 'Stage en développement web',
     startDate: '2026-09-01',
     endDate: '2026-12-01',
@@ -28,6 +28,27 @@ describe('CreateInternshipDto', () => {
     const dto = plainToInstance(CreateInternshipDto, validPayload);
 
     await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
+  it('refuse une référence de stage fournie par le client', async () => {
+    const pipe = new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    });
+
+    await expect(
+      pipe.transform(
+        {
+          ...validPayload,
+          referenceCode: 'STAGE-MANUEL',
+        },
+        {
+          type: 'body',
+          metatype: CreateInternshipDto,
+        },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('refuse une note supérieure à 20', async () => {

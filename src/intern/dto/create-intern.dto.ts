@@ -18,11 +18,6 @@ import { EducationLevel, Gender } from '../../generated/prisma/enums';
 export class CreateInternDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(30)
-  registrationCode!: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MaxLength(100)
   firstName!: string;
 

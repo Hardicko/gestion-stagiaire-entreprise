@@ -6,10 +6,7 @@ import {
 } from '@nestjs/common';
 
 import type { Prisma } from '../generated/prisma/client';
-import {
-  AssignmentStatus,
-  InternshipStatus,
-} from '../generated/prisma/enums';
+import { AssignmentStatus, InternshipStatus } from '../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateInternshipDto } from './dto/create-internship.dto';
 import { InternshipTrackingQueryDto } from './dto/internship-tracking-query.dto';
@@ -153,9 +150,6 @@ export class InternshipService {
   }
 
   async create(createInternshipDto: CreateInternshipDto) {
-    const referenceCode = createInternshipDto.referenceCode
-      .trim()
-      .toUpperCase();
     const startDate = this.parseDate(
       createInternshipDto.startDate,
       'La date de début',
@@ -175,16 +169,6 @@ export class InternshipService {
       createInternshipDto.authorityId ?? null,
     );
 
-    const existingInternship = await this.prisma.internship.findUnique({
-      where: {
-        referenceCode,
-      },
-    });
-
-    if (existingInternship) {
-      throw new ConflictException('Cette référence de stage existe déjà.');
-    }
-
     if (status !== InternshipStatus.CANCELLED) {
       await this.verifyNoOverlap(
         createInternshipDto.internId,
@@ -193,40 +177,98 @@ export class InternshipService {
       );
     }
 
-    return this.prisma.internship.create({
-      data: {
-        referenceCode,
-        title: createInternshipDto.title.trim(),
-        description: createInternshipDto.description?.trim() || null,
-        startDate,
-        endDate,
-        status,
-        internshipType: createInternshipDto.internshipType,
-        monthlyAllowance: createInternshipDto.monthlyAllowance ?? null,
-        currency: createInternshipDto.currency?.trim().toUpperCase() ?? 'XOF',
-        workLocation: createInternshipDto.workLocation.trim(),
-        internId: createInternshipDto.internId,
-        departmentId: createInternshipDto.departmentId,
-        supervisorId: createInternshipDto.supervisorId,
-        authorityId: createInternshipDto.authorityId ?? null,
-        grade: createInternshipDto.grade ?? null,
-        isActive: createInternshipDto.isActive ?? true,
-      },
-      include: {
-        intern: true,
-        department: true,
-        supervisor: {
-          include: {
-            employee: true,
-          },
-        },
-        authority: {
-          include: {
-            employee: true,
-          },
-        },
-      },
-    });
+    for (
+      let transactionAttempt = 0;
+      transactionAttempt < 3;
+      transactionAttempt++
+    ) {
+      try {
+        return await this.prisma.$transaction(async (transaction) => {
+          const year = new Date().getUTCFullYear();
+
+          for (let skippedCodes = 0; skippedCodes < 1000; skippedCodes++) {
+            const sequence =
+              await transaction.internshipReferenceCodeSequence.upsert({
+                where: { year },
+                create: {
+                  year,
+                  lastValue: 1,
+                },
+                update: {
+                  lastValue: {
+                    increment: 1,
+                  },
+                },
+              });
+            const referenceCode = `STAGE-${year}-${String(
+              sequence.lastValue,
+            ).padStart(4, '0')}`;
+            const existingReference = await transaction.internship.findUnique({
+              where: { referenceCode },
+              select: { id: true },
+            });
+
+            if (existingReference) {
+              continue;
+            }
+
+            return transaction.internship.create({
+              data: {
+                referenceCode,
+                title: createInternshipDto.title.trim(),
+                description: createInternshipDto.description?.trim() || null,
+                startDate,
+                endDate,
+                status,
+                internshipType: createInternshipDto.internshipType,
+                monthlyAllowance: createInternshipDto.monthlyAllowance ?? null,
+                currency:
+                  createInternshipDto.currency?.trim().toUpperCase() ?? 'XOF',
+                workLocation: createInternshipDto.workLocation.trim(),
+                internId: createInternshipDto.internId,
+                departmentId: createInternshipDto.departmentId,
+                supervisorId: createInternshipDto.supervisorId,
+                authorityId: createInternshipDto.authorityId ?? null,
+                grade: createInternshipDto.grade ?? null,
+                isActive: createInternshipDto.isActive ?? true,
+              },
+              include: {
+                intern: true,
+                department: true,
+                supervisor: {
+                  include: {
+                    employee: true,
+                  },
+                },
+                authority: {
+                  include: {
+                    employee: true,
+                  },
+                },
+              },
+            });
+          }
+
+          throw new ConflictException(
+            'Impossible de réserver une référence de stage disponible.',
+          );
+        });
+      } catch (error) {
+        const isConcurrentReferenceCollision =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 'P2002';
+
+        if (!isConcurrentReferenceCollision || transactionAttempt === 2) {
+          throw error;
+        }
+      }
+    }
+
+    throw new ConflictException(
+      'Impossible de réserver une référence de stage disponible.',
+    );
   }
 
   async findAll() {
@@ -404,9 +446,6 @@ export class InternshipService {
   async update(id: string, updateInternshipDto: UpdateInternshipDto) {
     const currentInternship = await this.findOne(id);
 
-    const referenceCode = updateInternshipDto.referenceCode
-      ?.trim()
-      .toUpperCase();
     const startDate =
       updateInternshipDto.startDate !== undefined
         ? this.parseDate(updateInternshipDto.startDate, 'La date de début')
@@ -441,21 +480,6 @@ export class InternshipService {
       authorityId,
     );
 
-    if (referenceCode !== undefined) {
-      const existingInternship = await this.prisma.internship.findFirst({
-        where: {
-          id: {
-            not: id,
-          },
-          referenceCode,
-        },
-      });
-
-      if (existingInternship) {
-        throw new ConflictException('Cette référence de stage existe déjà.');
-      }
-    }
-
     if (status !== InternshipStatus.CANCELLED) {
       await this.verifyNoOverlap(internId, startDate, endDate, id);
     }
@@ -470,7 +494,6 @@ export class InternshipService {
         id,
       },
       data: {
-        ...(referenceCode !== undefined && { referenceCode }),
         ...(updateInternshipDto.title !== undefined && {
           title: updateInternshipDto.title.trim(),
         }),

@@ -424,6 +424,235 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "4 - Stagiaires",
+      "item": [
+        {
+          "name": "Créer un stagiaire avec un code automatique",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Le backend a généré le code d inscription', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.registrationCode).to.match(/^STG-\\d{4}-\\d{4,}$/);",
+                  "  pm.environment.set('createdInternId', data.id);",
+                  "  pm.environment.set('generatedRegistrationCode', data.registrationCode);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Awa\",\n  \"lastName\": \"Traoré\",\n  \"dateOfBirth\": \"2001-05-10\",\n  \"gender\": \"FEMALE\",\n  \"email\": \"stagiaire.{{$randomUUID}}@example.com\",\n  \"phone\": \"+22370000000\",\n  \"address\": \"Bamako\",\n  \"school\": \"Université de Bamako\",\n  \"fieldOfStudy\": \"Informatique\",\n  \"educationLevel\": \"LICENCE\",\n  \"studyYear\": 3,\n  \"emergencyContactName\": \"Parent\",\n  \"emergencyContactPhone\": \"+22371000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/interns",
+              "host": ["{{baseUrl}}"],
+              "path": ["interns"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser un code d'inscription saisi manuellement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registrationCode\": \"STG-MANUEL\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"Invalide\",\n  \"dateOfBirth\": \"2001-05-10\",\n  \"gender\": \"FEMALE\",\n  \"email\": \"invalide.{{$randomUUID}}@example.com\",\n  \"phone\": \"+22370000000\",\n  \"school\": \"Université de Bamako\",\n  \"fieldOfStudy\": \"Informatique\",\n  \"educationLevel\": \"LICENCE\",\n  \"studyYear\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/interns",
+              "host": ["{{baseUrl}}"],
+              "path": ["interns"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5 - Stages",
+      "description": "Exécuter d'abord la création du stagiaire et renseigner departmentId et supervisorId.",
+      "item": [
+        {
+          "name": "Créer un stage avec une référence automatique",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Le backend a généré la référence de stage', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.referenceCode).to.match(/^STAGE-\\d{4}-\\d{4,}$/);",
+                  "  pm.environment.set('createdInternshipId', data.id);",
+                  "  pm.environment.set('generatedInternshipReference', data.referenceCode);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Stage de développement backend\",\n  \"description\": \"Test de génération automatique de la référence\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-12-31\",\n  \"status\": \"PLANNED\",\n  \"internshipType\": \"ACADEMIC\",\n  \"monthlyAllowance\": 50000,\n  \"currency\": \"XOF\",\n  \"workLocation\": \"Bamako\",\n  \"internId\": \"{{createdInternId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"supervisorId\": \"{{supervisorId}}\",\n  \"grade\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internships",
+              "host": ["{{baseUrl}}"],
+              "path": ["internships"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser une référence de stage saisie manuellement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referenceCode\": \"STAGE-MANUEL\",\n  \"title\": \"Stage invalide\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-12-31\",\n  \"internshipType\": \"ACADEMIC\",\n  \"workLocation\": \"Bamako\",\n  \"internId\": \"{{createdInternId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"supervisorId\": \"{{supervisorId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internships",
+              "host": ["{{baseUrl}}"],
+              "path": ["internships"]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

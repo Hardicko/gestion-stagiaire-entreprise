@@ -351,7 +351,7 @@ Conserver l’identité personnelle et le parcours académique de la personne ac
 
 **Données principales**
 
-- code d’inscription unique ;
+- code d’inscription unique, immuable et généré automatiquement au format `STG-AAAA-NNNN` ; un candidat occupé est sauté ;
 - identité, date de naissance et genre ;
 - email et téléphone ;
 - adresse ;
@@ -367,7 +367,7 @@ Conserver l’identité personnelle et le parcours académique de la personne ac
 
 **Actions et règles**
 
-- le code d’inscription et l’email sont uniques ;
+- le code d’inscription généré et l’email sont uniques ;
 - la date de naissance doit être valide et ne pas être future ;
 - la suppression désactive le stagiaire ;
 - tout utilisateur connecté peut consulter ; seul l’administrateur peut modifier.
@@ -382,7 +382,7 @@ Représenter une période réelle de stage effectuée par un stagiaire dans l’
 
 **Données principales**
 
-- référence unique ;
+- référence unique, immuable et générée automatiquement au format `STAGE-AAAA-NNNN` ; une candidate occupée est sautée ;
 - titre et description ;
 - dates de début et de fin ;
 - type de stage ;

@@ -43,8 +43,14 @@ describe('InternshipService', () => {
   const projectRepository = {
     count: jest.fn(),
   };
-
-  const prisma = {
+  const internshipReferenceCodeSequenceRepository = {
+    upsert: jest.fn(),
+  };
+  const transaction = {
+    internship: internshipRepository,
+    internshipReferenceCodeSequence: internshipReferenceCodeSequenceRepository,
+  };
+  const prismaClient = {
     intern: internRepository,
     department: departmentRepository,
     supervisor: supervisorRepository,
@@ -52,12 +58,17 @@ describe('InternshipService', () => {
     projectAssignment: projectAssignmentRepository,
     internship: internshipRepository,
     project: projectRepository,
-  } as unknown as PrismaService;
+    $transaction: jest.fn(
+      (callback: (client: typeof transaction) => Promise<unknown>) =>
+        callback(transaction),
+    ),
+  };
+
+  const prisma = prismaClient as unknown as PrismaService;
 
   let service: InternshipService;
 
   const validDto: CreateInternshipDto = {
-    referenceCode: ' stage-001 ',
     title: ' Développement web ',
     description: ' Mission de développement ',
     startDate: '2026-09-01',
@@ -87,23 +98,37 @@ describe('InternshipService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-08-26T12:00:00.000Z'));
     service = new InternshipService(prisma);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('crée un stage avec les valeurs normalisées et les valeurs par défaut', async () => {
     mockActiveRelations();
-    internshipRepository.findUnique.mockResolvedValue(null);
     internshipRepository.findFirst.mockResolvedValue(null);
-    internshipRepository.create.mockResolvedValue({ id: 'internship-id' });
+    internshipRepository.findUnique.mockResolvedValue(null);
+    internshipReferenceCodeSequenceRepository.upsert.mockResolvedValue({
+      year: 2026,
+      lastValue: 1,
+    });
+    internshipRepository.create.mockResolvedValue({
+      id: 'internship-id',
+      referenceCode: 'STAGE-2026-0001',
+    });
 
     await expect(service.create(validDto)).resolves.toEqual({
       id: 'internship-id',
+      referenceCode: 'STAGE-2026-0001',
     });
 
     expect(internshipRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          referenceCode: 'STAGE-001',
+          referenceCode: 'STAGE-2026-0001',
           title: 'Développement web',
           description: 'Mission de développement',
           startDate: expect.any(Date),
@@ -139,16 +164,70 @@ describe('InternshipService', () => {
     expect(internshipRepository.create).not.toHaveBeenCalled();
   });
 
-  it('refuse une référence déjà utilisée', async () => {
+  it('saute une référence existante et utilise la suivante', async () => {
     mockActiveRelations();
-    internshipRepository.findUnique.mockResolvedValue({
-      id: 'existing-internship',
-    });
+    internshipRepository.findFirst.mockResolvedValue(null);
+    internshipReferenceCodeSequenceRepository.upsert
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 1,
+      })
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 2,
+      });
+    internshipRepository.findUnique
+      .mockResolvedValueOnce({ id: 'existing-internship' })
+      .mockResolvedValueOnce(null);
+    internshipRepository.create.mockResolvedValue({ id: 'internship-id' });
 
-    await expect(service.create(validDto)).rejects.toBeInstanceOf(
-      ConflictException,
+    await service.create(validDto);
+
+    expect(internshipRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          referenceCode: 'STAGE-2026-0002',
+        }),
+      }),
     );
-    expect(internshipRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('réessaie après une collision simultanée de référence', async () => {
+    mockActiveRelations();
+    internshipRepository.findFirst.mockResolvedValue(null);
+    internshipReferenceCodeSequenceRepository.upsert
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 1,
+      })
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 1,
+      })
+      .mockResolvedValueOnce({
+        year: 2026,
+        lastValue: 2,
+      });
+    internshipRepository.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'concurrent-internship' })
+      .mockResolvedValueOnce(null);
+    internshipRepository.create
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Unique constraint failed'), {
+          code: 'P2002',
+        }),
+      )
+      .mockResolvedValueOnce({
+        id: 'internship-id',
+        referenceCode: 'STAGE-2026-0002',
+      });
+
+    await expect(service.create(validDto)).resolves.toEqual({
+      id: 'internship-id',
+      referenceCode: 'STAGE-2026-0002',
+    });
+    expect(prismaClient.$transaction).toHaveBeenCalledTimes(2);
   });
 
   it('refuse le chevauchement de deux stages du même stagiaire', async () => {

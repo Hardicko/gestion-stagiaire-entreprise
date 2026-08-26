@@ -30,44 +30,98 @@ export class InternService {
   }
 
   async create(createInternDto: CreateInternDto) {
-    const registrationCode = createInternDto.registrationCode
-      .trim()
-      .toUpperCase();
     const email = createInternDto.email.trim().toLowerCase();
+    const dateOfBirth = this.parseDateOfBirth(createInternDto.dateOfBirth);
 
-    const existingIntern = await this.prisma.intern.findFirst({
-      where: {
-        OR: [{ registrationCode }, { email }],
-      },
-    });
+    for (
+      let transactionAttempt = 0;
+      transactionAttempt < 3;
+      transactionAttempt++
+    ) {
+      try {
+        return await this.prisma.$transaction(async (transaction) => {
+          const existingEmail = await transaction.intern.findFirst({
+            where: { email },
+            select: { id: true },
+          });
 
-    if (existingIntern) {
-      throw new ConflictException(
-        'Un stagiaire avec ce matricule ou cet email existe déjà.',
-      );
+          if (existingEmail) {
+            throw new ConflictException(
+              'Un stagiaire avec cet email existe déjà.',
+            );
+          }
+
+          const year = new Date().getUTCFullYear();
+
+          for (let skippedCodes = 0; skippedCodes < 1000; skippedCodes++) {
+            const sequence =
+              await transaction.internRegistrationCodeSequence.upsert({
+                where: { year },
+                create: {
+                  year,
+                  lastValue: 1,
+                },
+                update: {
+                  lastValue: {
+                    increment: 1,
+                  },
+                },
+              });
+            const registrationCode = `STG-${year}-${String(
+              sequence.lastValue,
+            ).padStart(4, '0')}`;
+            const existingCode = await transaction.intern.findUnique({
+              where: { registrationCode },
+              select: { id: true },
+            });
+
+            if (existingCode) {
+              continue;
+            }
+
+            return transaction.intern.create({
+              data: {
+                registrationCode,
+                firstName: createInternDto.firstName.trim(),
+                lastName: createInternDto.lastName.trim(),
+                dateOfBirth,
+                gender: createInternDto.gender,
+                email,
+                phone: createInternDto.phone.trim(),
+                address: createInternDto.address?.trim() || null,
+                school: createInternDto.school.trim(),
+                fieldOfStudy: createInternDto.fieldOfStudy.trim(),
+                educationLevel: createInternDto.educationLevel,
+                studyYear: createInternDto.studyYear,
+                emergencyContactName:
+                  createInternDto.emergencyContactName?.trim() || null,
+                emergencyContactPhone:
+                  createInternDto.emergencyContactPhone?.trim() || null,
+                isActive: createInternDto.isActive ?? true,
+              },
+            });
+          }
+
+          throw new ConflictException(
+            'Impossible de réserver un code d’inscription disponible.',
+          );
+        });
+      } catch (error) {
+        const isConcurrentUniqueCollision =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 'P2002';
+
+        if (!isConcurrentUniqueCollision || transactionAttempt === 2) {
+          throw error;
+        }
+      }
     }
 
-    return this.prisma.intern.create({
-      data: {
-        registrationCode,
-        firstName: createInternDto.firstName.trim(),
-        lastName: createInternDto.lastName.trim(),
-        dateOfBirth: this.parseDateOfBirth(createInternDto.dateOfBirth),
-        gender: createInternDto.gender,
-        email,
-        phone: createInternDto.phone.trim(),
-        address: createInternDto.address?.trim() || null,
-        school: createInternDto.school.trim(),
-        fieldOfStudy: createInternDto.fieldOfStudy.trim(),
-        educationLevel: createInternDto.educationLevel,
-        studyYear: createInternDto.studyYear,
-        emergencyContactName:
-          createInternDto.emergencyContactName?.trim() || null,
-        emergencyContactPhone:
-          createInternDto.emergencyContactPhone?.trim() || null,
-        isActive: createInternDto.isActive ?? true,
-      },
-    });
+    throw new ConflictException(
+      'Impossible de réserver un code d’inscription disponible.',
+    );
   }
 
   async findAll() {
@@ -94,26 +148,18 @@ export class InternService {
   async update(id: string, updateInternDto: UpdateInternDto) {
     await this.findOne(id);
 
-    const registrationCode = updateInternDto.registrationCode
-      ?.trim()
-      .toUpperCase();
     const email = updateInternDto.email?.trim().toLowerCase();
 
-    if (registrationCode !== undefined || email !== undefined) {
+    if (email !== undefined) {
       const existingIntern = await this.prisma.intern.findFirst({
         where: {
           id: { not: id },
-          OR: [
-            ...(registrationCode !== undefined ? [{ registrationCode }] : []),
-            ...(email !== undefined ? [{ email }] : []),
-          ],
+          email,
         },
       });
 
       if (existingIntern) {
-        throw new ConflictException(
-          'Un stagiaire avec ce matricule ou cet email existe déjà.',
-        );
+        throw new ConflictException('Un stagiaire avec cet email existe déjà.');
       }
     }
 
@@ -133,7 +179,6 @@ export class InternService {
     return this.prisma.intern.update({
       where: { id },
       data: {
-        ...(registrationCode !== undefined && { registrationCode }),
         ...(updateInternDto.firstName !== undefined && {
           firstName: updateInternDto.firstName.trim(),
         }),

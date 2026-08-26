@@ -238,6 +238,8 @@ Base : `/interns`.
 
 Champs principaux : `registrationCode`, `firstName`, `lastName`, `dateOfBirth`, `gender`, `email`, `phone`, `address`, `school`, `fieldOfStudy`, `educationLevel`, `studyYear` et contact d’urgence.
 
+`registrationCode` n’est jamais envoyé dans un POST ou un PATCH. Le backend le génère au format `STG-AAAA-NNNN`, vérifie sa disponibilité, saute les numéros occupés et le renvoie dans la réponse `201`. Il reste ensuite immuable.
+
 Valeurs :
 
 - genre : `MALE`, `FEMALE` ;
@@ -253,6 +255,8 @@ Permissions : `interns.read`, `interns.create`, `interns.update`, `interns.deact
 Base : `/internships`.
 
 Champs principaux : référence, titre, dates, statut, type, indemnité, devise, lieu, stagiaire, département, encadreur, autorité facultative et note.
+
+`referenceCode` n’est jamais envoyé dans un POST ou un PATCH. Le backend le génère au format `STAGE-AAAA-NNNN`, saute les références déjà occupées et le renvoie dans la réponse `201`. La référence reste ensuite immuable.
 
 Valeurs :
 
