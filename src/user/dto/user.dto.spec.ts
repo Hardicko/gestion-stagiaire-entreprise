@@ -9,7 +9,8 @@ import { UpdateUserDto } from './update-user.dto';
 
 describe('User DTOs', () => {
   const employeeId = '11111111-1111-4111-8111-111111111111';
-  const roleId = '22222222-2222-4222-8222-222222222222';
+  // UUID version 1, identique au format produit par UUID() dans MySQL.
+  const roleId = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
   const password = 'MotDePasseSolide2026!';
 
   it('accepte la création d’un utilisateur valide', async () => {

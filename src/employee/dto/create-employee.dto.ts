@@ -33,12 +33,12 @@ export class CreateEmployeeDto {
   @MaxLength(30)
   phone?: string;
 
-  @IsUUID('4', {
+  @IsUUID(['1', '4'], {
     message: 'Le poste sélectionné est invalide.',
   })
   positionId!: string;
 
-  @IsUUID('4', {
+  @IsUUID(['1', '4'], {
     message: 'Le département sélectionné est invalide.',
   })
   departmentId!: string;

@@ -8,12 +8,14 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
-  @IsUUID('4', {
+  @IsUUID(['1', '4'], {
     message: "L'identifiant de l'employé doit être un UUID valide.",
   })
   employeeId: string;
 
-  @IsUUID('4', { message: "L'identifiant du rôle doit être un UUID valide." })
+  @IsUUID(['1', '4'], {
+    message: "L'identifiant du rôle doit être un UUID valide.",
+  })
   roleId: string;
 
   @IsString({ message: 'Le mot de passe doit être une chaîne de caractères.' })

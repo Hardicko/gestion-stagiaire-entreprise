@@ -2,7 +2,9 @@ import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsUUID('4', { message: "L'identifiant du rôle doit être un UUID valide." })
+  @IsUUID(['1', '4'], {
+    message: "L'identifiant du rôle doit être un UUID valide.",
+  })
   roleId?: string;
 
   @IsOptional()

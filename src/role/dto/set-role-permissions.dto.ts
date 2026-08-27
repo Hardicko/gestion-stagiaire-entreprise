@@ -8,6 +8,6 @@ export class SetRolePermissionsDto {
   })
   @IsArray()
   @ArrayUnique()
-  @IsUUID('4', { each: true })
+  @IsUUID(['1', '4'], { each: true })
   permissionIds!: string[];
 }

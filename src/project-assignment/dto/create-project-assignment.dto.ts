@@ -11,10 +11,10 @@ import {
 import { AssignmentStatus } from '../../generated/prisma/enums';
 
 export class CreateProjectAssignmentDto {
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   internshipId!: string;
 
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   projectId!: string;
 
   @IsString()

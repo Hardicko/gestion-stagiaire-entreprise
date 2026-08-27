@@ -58,17 +58,17 @@ export class CreateInternshipDto {
   @MaxLength(200)
   workLocation!: string;
 
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   internId!: string;
 
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   departmentId!: string;
 
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   supervisorId!: string;
 
   @IsOptional()
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   authorityId?: string | null;
 
   @IsOptional()

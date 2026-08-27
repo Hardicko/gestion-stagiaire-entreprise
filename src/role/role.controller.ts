@@ -44,7 +44,7 @@ export class RoleController {
   @Put(':id/permissions')
   @RequirePermissions(PERMISSIONS.ROLES_MANAGE_PERMISSIONS)
   setPermissions(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() setRolePermissionsDto: SetRolePermissionsDto,
   ) {
     return this.roleService.setPermissions(id, setRolePermissionsDto);
@@ -52,14 +52,14 @@ export class RoleController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.ROLES_READ)
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.roleService.findOne(id);
   }
 
   @Patch(':id')
   @RequirePermissions(PERMISSIONS.ROLES_UPDATE)
   update(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateRoleDto: UpdateRoleDto,
   ) {
     return this.roleService.update(id, updateRoleDto);
@@ -67,7 +67,7 @@ export class RoleController {
 
   @Delete(':id')
   @RequirePermissions(PERMISSIONS.ROLES_DEACTIVATE)
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.roleService.remove(id);
   }
 }

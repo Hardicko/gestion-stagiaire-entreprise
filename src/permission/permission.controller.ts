@@ -28,7 +28,7 @@ export class PermissionController {
   }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.permissionService.findOne(id);
   }
 }

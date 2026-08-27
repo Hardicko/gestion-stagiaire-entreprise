@@ -41,14 +41,14 @@ export class PositionController {
 
   @Get(':id')
   @RequirePermissions(PERMISSIONS.POSITIONS_READ)
-  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.positionService.findOne(id);
   }
 
   @Patch(':id')
   @RequirePermissions(PERMISSIONS.POSITIONS_UPDATE)
   update(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updatePositionDto: UpdatePositionDto,
   ) {
     return this.positionService.update(id, updatePositionDto);
@@ -56,7 +56,7 @@ export class PositionController {
 
   @Delete(':id')
   @RequirePermissions(PERMISSIONS.POSITIONS_DEACTIVATE)
-  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.positionService.remove(id);
   }
 }

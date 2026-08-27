@@ -41,7 +41,9 @@ export class AuditLogQueryDto {
   resource?: string;
 
   @IsOptional()
-  @IsUUID('4', { message: "L'identifiant utilisateur doit être un UUID." })
+  @IsUUID(['1', '4'], {
+    message: "L'identifiant utilisateur doit être un UUID.",
+  })
   userId?: string;
 
   @IsOptional()

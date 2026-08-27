@@ -10,10 +10,7 @@ import {
   Min,
 } from 'class-validator';
 
-import {
-  InternshipStatus,
-  ProjectStatus,
-} from '../../generated/prisma/enums';
+import { InternshipStatus, ProjectStatus } from '../../generated/prisma/enums';
 
 export class InternshipTrackingQueryDto {
   @IsOptional()
@@ -22,7 +19,7 @@ export class InternshipTrackingQueryDto {
   q?: string;
 
   @IsOptional()
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   departmentId?: string;
 
   @IsOptional()

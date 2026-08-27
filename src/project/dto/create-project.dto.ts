@@ -40,7 +40,7 @@ export class CreateProjectDto {
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
 
-  @IsUUID('4')
+  @IsUUID(['1', '4'])
   departmentId!: string;
 
   @IsOptional()

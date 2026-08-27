@@ -40,7 +40,10 @@ Authorization: Bearer ACCESS_TOKEN
 
 ### Conventions communes
 
-- Les identifiants sont des UUID version 4.
+- Les identifiants sont des UUID standards : les migrations MySQL peuvent
+  produire des UUID version 1, tandis que Prisma génère des UUID version 4.
+  Le frontend doit toujours réutiliser exactement l'identifiant retourné par
+  l'API, sans le recalculer ni le transformer.
 - Les dates sont envoyées en ISO 8601, par exemple `2026-08-24` ou `2026-08-24T10:30:00.000Z` selon le champ.
 - Le backend renvoie directement l’objet, le tableau ou l’objet paginé : il n’ajoute pas d’enveloppe `data`. Avec Axios, la donnée métier reste dans `response.data`.
 - Les champs inconnus sont refusés avec le statut `400`.

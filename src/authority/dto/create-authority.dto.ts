@@ -9,13 +9,13 @@ import {
 } from 'class-validator';
 
 export class CreateAuthorityDto {
-  @IsUUID('4', {
+  @IsUUID(['1', '4'], {
     message: 'L’identifiant de l’employé doit être un UUID valide.',
   })
   employeeId!: string;
 
   @IsOptional()
-  @IsUUID('4', {
+  @IsUUID(['1', '4'], {
     message: 'L’identifiant du département doit être un UUID valide.',
   })
   departmentId?: string | null;
