@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
-import { SupervisorService } from './supervisor.service';
+
+import { AuthModule } from '../auth/auth.module';
 import { SupervisorController } from './supervisor.controller';
+import { SupervisorService } from './supervisor.service';
 
 @Module({
+  imports: [AuthModule],
   controllers: [SupervisorController],
   providers: [SupervisorService],
 })

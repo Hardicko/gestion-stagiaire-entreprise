@@ -33,10 +33,10 @@ export class CreateEmployeeDto {
   @MaxLength(30)
   phone?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(150)
-  jobTitle!: string;
+  @IsUUID('4', {
+    message: 'Le poste sélectionné est invalide.',
+  })
+  positionId!: string;
 
   @IsUUID('4', {
     message: 'Le département sélectionné est invalide.',

@@ -50,6 +50,21 @@ enum AssignmentStatus {
   REMOVED
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  PASSWORD_RESET
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
 model Role {
   id          String   @id @default(uuid()) @db.Char(36)
   name        String   @unique @db.VarChar(50)
@@ -58,9 +73,39 @@ model Role {
   createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
-  users User[]
+  users           User[]
+  rolePermissions RolePermission[]
 
   @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Char(36)
+  code        String   @unique @db.VarChar(100)
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  category    String   @db.VarChar(50)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  rolePermissions RolePermission[]
+
+  @@index([category, code])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String   @map("role_id") @db.Char(36)
+  permissionId String   @map("permission_id") @db.Char(36)
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
 }
 
 model Department {
@@ -88,6 +133,20 @@ model Department {
   @@map("departments")
 }
 
+model Position {
+  id          String   @id @default(uuid()) @db.Char(36)
+  code        String   @unique @db.VarChar(30)
+  name        String   @unique @db.VarChar(150)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  employees Employee[]
+
+  @@map("positions")
+}
+
 model Employee {
   id             String   @id @default(uuid()) @db.Char(36)
   employeeNumber String   @unique @map("employee_number") @db.VarChar(50)
@@ -95,19 +154,21 @@ model Employee {
   lastName       String   @map("last_name") @db.VarChar(100)
   email          String   @unique @db.VarChar(255)
   phone          String?  @db.VarChar(30)
-  jobTitle       String   @map("job_title") @db.VarChar(150)
+  positionId     String   @map("position_id") @db.Char(36)
   departmentId   String   @map("department_id") @db.Char(36)
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.DateTime(3)
 
   department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  position   Position   @relation(fields: [positionId], references: [id], onDelete: Restrict)
   user       User?
 
   supervisor Supervisor?
   authority  Authority?
 
   @@index([departmentId])
+  @@index([positionId])
   @@map("employees")
 }
 
@@ -127,11 +188,32 @@ model User {
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   role     Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
-  departmentsCreated Department[] @relation("DepartmentCreatedBy")
-  departmentsUpdated Department[] @relation("DepartmentUpdatedBy")
+  departmentsCreated Department[]  @relation("DepartmentCreatedBy")
+  departmentsUpdated Department[]  @relation("DepartmentUpdatedBy")
+  auditLogs          AuditLog[]
+  authSessions       AuthSession[]
 
   @@index([roleId])
   @@map("users")
+}
+
+model AuthSession {
+  id               String    @id @default(uuid()) @db.Char(36)
+  userId           String    @map("user_id") @db.Char(36)
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
+  expiresAt        DateTime  @map("expires_at") @db.DateTime(3)
+  lastUsedAt       DateTime? @map("last_used_at") @db.DateTime(3)
+  revokedAt        DateTime? @map("revoked_at") @db.DateTime(3)
+  ipAddress        String?   @map("ip_address") @db.VarChar(45)
+  userAgent        String?   @map("user_agent") @db.VarChar(500)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("auth_sessions")
 }
 
 model Supervisor {
@@ -193,6 +275,15 @@ model Intern {
   @@map("interns")
 }
 
+model InternRegistrationCodeSequence {
+  year      Int      @id
+  lastValue Int      @default(0) @map("last_value")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("intern_registration_code_sequences")
+}
+
 model Internship {
   id               String           @id @default(uuid()) @db.Char(36)
   referenceCode    String           @unique @map("reference_code") @db.VarChar(30)
@@ -230,6 +321,15 @@ model Internship {
   @@map("internships")
 }
 
+model InternshipReferenceCodeSequence {
+  year      Int      @id
+  lastValue Int      @default(0) @map("last_value")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("internship_reference_code_sequences")
+}
+
 model Project {
   id           String        @id @default(uuid()) @db.Char(36)
   projectCode  String        @unique @map("project_code") @db.VarChar(30)
@@ -253,6 +353,15 @@ model Project {
   @@map("projects")
 }
 
+model ProjectCodeSequence {
+  year      Int      @id
+  lastValue Int      @default(0) @map("last_value")
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("project_code_sequences")
+}
+
 model ProjectAssignment {
   id           String           @id @default(uuid()) @db.Char(36)
   internshipId String           @map("internship_id") @db.Char(36)
@@ -274,4 +383,29 @@ model ProjectAssignment {
   @@index([status])
   @@index([startDate, endDate])
   @@map("project_assignments")
+}
+
+model AuditLog {
+  id          String       @id @default(uuid()) @db.Char(36)
+  userId      String?      @map("user_id") @db.Char(36)
+  action      AuditAction
+  outcome     AuditOutcome @default(SUCCESS)
+  resource    String       @db.VarChar(100)
+  resourceId  String?      @map("resource_id") @db.Char(36)
+  entityLabel String?      @map("entity_label") @db.VarChar(255)
+  method      String       @db.VarChar(10)
+  path        String       @db.VarChar(500)
+  statusCode  Int          @map("status_code") @db.SmallInt
+  ipAddress   String?      @map("ip_address") @db.VarChar(45)
+  userAgent   String?      @map("user_agent") @db.VarChar(500)
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([resource, resourceId])
+  @@index([outcome, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

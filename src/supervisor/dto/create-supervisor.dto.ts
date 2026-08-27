@@ -1,1 +1,12 @@
-export class CreateSupervisorDto {}
+import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
+
+export class CreateSupervisorDto {
+  @IsUUID('4', {
+    message: 'L’identifiant de l’employé doit être un UUID valide.',
+  })
+  employeeId!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}

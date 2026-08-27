@@ -1,0 +1,658 @@
+{
+  "info": {
+    "_postman_id": "8bd85889-3141-4a75-97cf-b84709c063eb",
+    "name": "Gestion stagiaire - API",
+    "description": "Tests Postman du backend NestJS de gestion des stagiaires. Importer aussi l'environnement fourni et remplacer uniquement les mots de passe dans Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - Santé",
+      "item": [
+        {
+          "name": "Vérifier la connexion MySQL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('La base MySQL répond', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.status).to.eql('ok');",
+                  "  pm.expect(data.database).to.eql('mysql');",
+                  "  pm.expect(data.roleCount).to.be.a('number');",
+                  "  pm.expect(data.checkedAt).to.be.a('string');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/database",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "database"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 - Authentification",
+      "item": [
+        {
+          "name": "Connexion administrateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('JWT et profil administrateur présents', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.accessToken).to.be.a('string').and.not.empty;",
+                  "  pm.expect(data.tokenType).to.eql('Bearer');",
+                  "  pm.expect(data.user.email).to.eql(pm.environment.get('adminEmail'));",
+                  "  pm.expect(data.user.role).to.eql('ADMINISTRATEUR');",
+                  "  pm.environment.set('accessToken', data.accessToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Profil administrateur avec JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Le profil administrateur est retourné', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.email).to.eql(pm.environment.get('adminEmail'));",
+                  "  pm.expect(data.role).to.eql('ADMINISTRATEUR');",
+                  "  pm.expect(data).not.to.have.property('passwordHash');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Connexion utilisateur simple",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('JWT et profil utilisateur présents', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.accessToken).to.be.a('string').and.not.empty;",
+                  "  pm.expect(data.user.email).to.eql(pm.environment.get('userEmail'));",
+                  "  pm.expect(data.user.role).to.eql('UTILISATEUR');",
+                  "  pm.environment.set('accessToken', data.accessToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Profil utilisateur simple avec JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Le profil utilisateur simple est retourné', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.email).to.eql(pm.environment.get('userEmail'));",
+                  "  pm.expect(data.role).to.eql('UTILISATEUR');",
+                  "  pm.expect(data).not.to.have.property('passwordHash');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser un mot de passe incorrect",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Une erreur Unauthorized est retournée', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.statusCode).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"mot-de-passe-volontairement-incorrect\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser le profil sans JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 401', function () {",
+                  "  pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 - Projets",
+      "description": "Renseigner departmentId dans l'environnement avant d'exécuter ces requêtes.",
+      "item": [
+        {
+          "name": "Créer un projet avec un code automatique",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Le backend a généré un code projet', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.projectCode).to.match(/^PRJ-\\d{4}-\\d{4,}$/);",
+                  "  pm.environment.set('createdProjectId', data.id);",
+                  "  pm.environment.set('generatedProjectCode', data.projectCode);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Projet Postman {{$randomUUID}}\",\n  \"description\": \"Test de génération automatique du code projet\",\n  \"gitlabLink\": \"https://gitlab.example.com/equipe/projet-postman\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-12-31\",\n  \"status\": \"PLANNED\",\n  \"departmentId\": \"{{departmentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser un code projet saisi manuellement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectCode\": \"PRJ-MANUEL\",\n  \"name\": \"Projet invalide\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-12-31\",\n  \"departmentId\": \"{{departmentId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4 - Stagiaires",
+      "item": [
+        {
+          "name": "Créer un stagiaire avec un code automatique",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Le backend a généré le code d inscription', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.registrationCode).to.match(/^STG-\\d{4}-\\d{4,}$/);",
+                  "  pm.environment.set('createdInternId', data.id);",
+                  "  pm.environment.set('generatedRegistrationCode', data.registrationCode);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Awa\",\n  \"lastName\": \"Traoré\",\n  \"dateOfBirth\": \"2001-05-10\",\n  \"gender\": \"FEMALE\",\n  \"email\": \"stagiaire.{{$randomUUID}}@example.com\",\n  \"phone\": \"+22370000000\",\n  \"address\": \"Bamako\",\n  \"school\": \"Université de Bamako\",\n  \"fieldOfStudy\": \"Informatique\",\n  \"educationLevel\": \"LICENCE\",\n  \"studyYear\": 3,\n  \"emergencyContactName\": \"Parent\",\n  \"emergencyContactPhone\": \"+22371000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/interns",
+              "host": ["{{baseUrl}}"],
+              "path": ["interns"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser un code d'inscription saisi manuellement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"registrationCode\": \"STG-MANUEL\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"Invalide\",\n  \"dateOfBirth\": \"2001-05-10\",\n  \"gender\": \"FEMALE\",\n  \"email\": \"invalide.{{$randomUUID}}@example.com\",\n  \"phone\": \"+22370000000\",\n  \"school\": \"Université de Bamako\",\n  \"fieldOfStudy\": \"Informatique\",\n  \"educationLevel\": \"LICENCE\",\n  \"studyYear\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/interns",
+              "host": ["{{baseUrl}}"],
+              "path": ["interns"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5 - Stages",
+      "description": "Exécuter d'abord la création du stagiaire et renseigner departmentId et supervisorId.",
+      "item": [
+        {
+          "name": "Créer un stage avec une référence automatique",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Le backend a généré la référence de stage', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.referenceCode).to.match(/^STAGE-\\d{4}-\\d{4,}$/);",
+                  "  pm.environment.set('createdInternshipId', data.id);",
+                  "  pm.environment.set('generatedInternshipReference', data.referenceCode);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Stage de développement backend\",\n  \"description\": \"Test de génération automatique de la référence\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-12-31\",\n  \"status\": \"PLANNED\",\n  \"internshipType\": \"ACADEMIC\",\n  \"monthlyAllowance\": 50000,\n  \"currency\": \"XOF\",\n  \"workLocation\": \"Bamako\",\n  \"internId\": \"{{createdInternId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"supervisorId\": \"{{supervisorId}}\",\n  \"grade\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internships",
+              "host": ["{{baseUrl}}"],
+              "path": ["internships"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser une référence de stage saisie manuellement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Statut HTTP 400', function () {",
+                  "  pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"referenceCode\": \"STAGE-MANUEL\",\n  \"title\": \"Stage invalide\",\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": \"2026-12-31\",\n  \"internshipType\": \"ACADEMIC\",\n  \"workLocation\": \"Bamako\",\n  \"internId\": \"{{createdInternId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"supervisorId\": \"{{supervisorId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/internships",
+              "host": ["{{baseUrl}}"],
+              "path": ["internships"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

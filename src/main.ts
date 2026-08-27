@@ -1,6 +1,8 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from './app.module';
+import { setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,23 +15,22 @@ async function bootstrap() {
     }),
   );
 
-  console.log('frontend origins', process.env.FRONTEND_ORIGINS);
   const allowedOrigins = (
-    process.env.FRONTEND_ORIGINS ?? 'http://localhost:5173'
+    process.env.FRONTEND_ORIGINS ??
+    'http://localhost:4200,http://localhost:5173'
   )
     .split(',')
-    .map((origin) => {
-      console.log('origin', origin);
-      return origin.trim();
-    });
-  console.log('allowedOrigins', allowedOrigins);
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  setupSwagger(app);
 
   const port = Number(process.env.PORT ?? 3000);
 

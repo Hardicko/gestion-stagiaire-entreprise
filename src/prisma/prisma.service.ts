@@ -13,6 +13,7 @@ export class PrismaService extends PrismaClient implements OnModuleDestroy {
       password: configService.getOrThrow<string>('DATABASE_PASSWORD'),
       database: configService.getOrThrow<string>('DATABASE_NAME'),
       connectionLimit: 5,
+      allowPublicKeyRetrieval: true,
     });
 
     super({ adapter });

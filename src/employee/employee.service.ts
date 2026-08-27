@@ -12,9 +12,7 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 export class EmployeeService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async verifyDepartment(
-    departmentId: string,
-  ): Promise<void> {
+  private async verifyDepartment(departmentId: string): Promise<void> {
     const department = await this.prisma.department.findFirst({
       where: {
         id: departmentId,
@@ -29,6 +27,21 @@ export class EmployeeService {
     }
   }
 
+  private async verifyPosition(positionId: string): Promise<void> {
+    const position = await this.prisma.position.findFirst({
+      where: {
+        id: positionId,
+        isActive: true,
+      },
+    });
+
+    if (!position) {
+      throw new NotFoundException(
+        'Le poste indiqué est introuvable ou inactif.',
+      );
+    }
+  }
+
   async create(createEmployeeDto: CreateEmployeeDto) {
     const employeeNumber = createEmployeeDto.employeeNumber
       .trim()
@@ -37,23 +50,18 @@ export class EmployeeService {
     const firstName = createEmployeeDto.firstName.trim();
     const lastName = createEmployeeDto.lastName.trim();
 
-    const email = createEmployeeDto.email
-      .trim()
-      .toLowerCase();
+    const email = createEmployeeDto.email.trim().toLowerCase();
 
     const phone = createEmployeeDto.phone?.trim() || null;
-    const jobTitle = createEmployeeDto.jobTitle.trim();
 
-    await this.verifyDepartment(
-      createEmployeeDto.departmentId,
-    );
+    await this.verifyDepartment(createEmployeeDto.departmentId);
+    await this.verifyPosition(createEmployeeDto.positionId);
 
-    const existingEmployee =
-      await this.prisma.employee.findFirst({
-        where: {
-          OR: [{ employeeNumber }, { email }],
-        },
-      });
+    const existingEmployee = await this.prisma.employee.findFirst({
+      where: {
+        OR: [{ employeeNumber }, { email }],
+      },
+    });
 
     if (existingEmployee) {
       throw new ConflictException(
@@ -68,12 +76,13 @@ export class EmployeeService {
         lastName,
         email,
         phone,
-        jobTitle,
+        positionId: createEmployeeDto.positionId,
         departmentId: createEmployeeDto.departmentId,
         isActive: createEmployeeDto.isActive ?? true,
       },
       include: {
         department: true,
+        position: true,
       },
     });
   }
@@ -85,6 +94,7 @@ export class EmployeeService {
       },
       include: {
         department: true,
+        position: true,
       },
       orderBy: [
         {
@@ -104,6 +114,7 @@ export class EmployeeService {
       },
       include: {
         department: true,
+        position: true,
       },
     });
 
@@ -114,59 +125,44 @@ export class EmployeeService {
     return employee;
   }
 
-  async update(
-    id: string,
-    updateEmployeeDto: UpdateEmployeeDto,
-  ) {
+  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
     await this.findOne(id);
 
     if (updateEmployeeDto.departmentId !== undefined) {
-      await this.verifyDepartment(
-        updateEmployeeDto.departmentId,
-      );
+      await this.verifyDepartment(updateEmployeeDto.departmentId);
     }
 
-    const employeeNumber =
-      updateEmployeeDto.employeeNumber
-        ?.trim()
-        .toUpperCase();
+    if (updateEmployeeDto.positionId !== undefined) {
+      await this.verifyPosition(updateEmployeeDto.positionId);
+    }
 
-    const firstName =
-      updateEmployeeDto.firstName?.trim();
-
-    const lastName =
-      updateEmployeeDto.lastName?.trim();
-
-    const email = updateEmployeeDto.email
+    const employeeNumber = updateEmployeeDto.employeeNumber
       ?.trim()
-      .toLowerCase();
+      .toUpperCase();
+
+    const firstName = updateEmployeeDto.firstName?.trim();
+
+    const lastName = updateEmployeeDto.lastName?.trim();
+
+    const email = updateEmployeeDto.email?.trim().toLowerCase();
 
     const phone =
       updateEmployeeDto.phone !== undefined
         ? updateEmployeeDto.phone.trim() || null
         : undefined;
 
-    const jobTitle =
-      updateEmployeeDto.jobTitle?.trim();
-
-    if (
-      employeeNumber !== undefined ||
-      email !== undefined
-    ) {
-      const existingEmployee =
-        await this.prisma.employee.findFirst({
-          where: {
-            id: {
-              not: id,
-            },
-            OR: [
-              ...(employeeNumber !== undefined
-                ? [{ employeeNumber }]
-                : []),
-              ...(email !== undefined ? [{ email }] : []),
-            ],
+    if (employeeNumber !== undefined || email !== undefined) {
+      const existingEmployee = await this.prisma.employee.findFirst({
+        where: {
+          id: {
+            not: id,
           },
-        });
+          OR: [
+            ...(employeeNumber !== undefined ? [{ employeeNumber }] : []),
+            ...(email !== undefined ? [{ email }] : []),
+          ],
+        },
+      });
 
       if (existingEmployee) {
         throw new ConflictException(
@@ -200,8 +196,8 @@ export class EmployeeService {
           phone,
         }),
 
-        ...(jobTitle !== undefined && {
-          jobTitle,
+        ...(updateEmployeeDto.positionId !== undefined && {
+          positionId: updateEmployeeDto.positionId,
         }),
 
         ...(updateEmployeeDto.departmentId !== undefined && {
@@ -214,6 +210,7 @@ export class EmployeeService {
       },
       include: {
         department: true,
+        position: true,
       },
     });
   }
@@ -222,21 +219,36 @@ export class EmployeeService {
     const employee = await this.findOne(id);
 
     if (!employee.isActive) {
-      throw new ConflictException(
-        'Cet employé est déjà désactivé.',
-      );
+      throw new ConflictException('Cet employé est déjà désactivé.');
     }
 
-    return this.prisma.employee.update({
-      where: {
-        id,
-      },
-      data: {
-        isActive: false,
-      },
-      include: {
-        department: true,
-      },
-    });
+    const revokedAt = new Date();
+    const [updatedEmployee] = await this.prisma.$transaction([
+      this.prisma.employee.update({
+        where: {
+          id,
+        },
+        data: {
+          isActive: false,
+        },
+        include: {
+          department: true,
+          position: true,
+        },
+      }),
+      this.prisma.authSession.updateMany({
+        where: {
+          user: {
+            employeeId: id,
+          },
+          revokedAt: null,
+        },
+        data: {
+          revokedAt,
+        },
+      }),
+    ]);
+
+    return updatedEmployee;
   }
 }

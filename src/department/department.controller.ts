@@ -9,47 +9,54 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+
+import { RequirePermissions } from '../auth/decorators/permissions/require-permissions.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions/permissions.guard';
+import { PERMISSIONS } from '../auth/permissions.constants';
+import { SWAGGER_BEARER_NAME } from '../config/swagger.config';
 import { DepartmentService } from './department.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles/roles.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMINISTRATEUR')
+@ApiTags('Départements')
+@ApiBearerAuth(SWAGGER_BEARER_NAME)
 @Controller('departments')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
   @Post()
-  @Roles('ADMINISTRATEUR')
+  @RequirePermissions(PERMISSIONS.DEPARTMENTS_CREATE)
   create(@Body() createDepartmentDto: CreateDepartmentDto) {
     return this.departmentService.create(createDepartmentDto);
   }
 
-  @Get('path')
+  @Get()
+  @RequirePermissions(PERMISSIONS.DEPARTMENTS_READ)
   findAll() {
     return this.departmentService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+  @RequirePermissions(PERMISSIONS.DEPARTMENTS_READ)
+  findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.departmentService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('ADMINISTRATEUR')
+  @RequirePermissions(PERMISSIONS.DEPARTMENTS_UPDATE)
   update(
-    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateDepartmentDto: UpdateDepartmentDto,
   ) {
     return this.departmentService.update(id, updateDepartmentDto);
   }
 
   @Delete(':id')
-  @Roles('ADMINISTRATEUR')
-  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+  @RequirePermissions(PERMISSIONS.DEPARTMENTS_DEACTIVATE)
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.departmentService.remove(id);
   }
 }
